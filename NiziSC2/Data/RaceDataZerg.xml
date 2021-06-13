@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<RaceData>
+  <Race>Zerg</Race>
+  <TechUnits>
+    <!--<TechUnit>
+      <UnitType>ZERG_DRONE</UnitType>
+      <Spawner>ZERG_LARVA</Spawner>
+    </TechUnit>-->
+    <TechUnit>
+      <UnitType>ZERG_SPAWNINGPOOL</UnitType>
+      <Spawner>ZERG_DRONE</Spawner>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_ROACHWARREN</UnitType>
+      <Spawner>ZERG_DRONE</Spawner>
+      <Depends>
+        <UnitType>ZERG_SPAWNINGPOOL</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_ZERGLING</UnitType>
+      <Spawner>ZERG_LARVA</Spawner>
+      <Depends>
+        <UnitType>ZERG_SPAWNINGPOOL</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_ROACH</UnitType>
+      <Spawner>ZERG_LARVA</Spawner>
+      <Depends>
+        <UnitType>ZERG_ROACHWARREN</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_OVERLORD</UnitType>
+      <Spawner>ZERG_LARVA</Spawner>
+    </TechUnit>
+  </TechUnits>
+  <Worker>
+    <UnitType>ZERG_DRONE</UnitType>
+    <Spawner>ZERG_LARVA</Spawner>
+  </Worker>
+  <ResourceBuilding>ZERG_HATCHERY</ResourceBuilding>
+  <VespeneBuilding>ZERG_EXTRACTOR</VespeneBuilding>
+  <SupplyBuilding>ZERG_OVERLORD</SupplyBuilding>
+  <Detector>ZERG_OVERSEER</Detector>
+</RaceData>

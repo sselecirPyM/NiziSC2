@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<LaunchOptions>
+  <Map>WorldofSleepersLE.SC2Map</Map>
+  <Port>5678</Port>
+  <Address>127.0.0.1</Address>
+  <OurRace>Terran</OurRace>
+  <!--<OurRace>Terran</OurRace>-->
+  <OpponentRace>Random</OpponentRace>
+  <!--<OpponentRace>Zerg</OpponentRace>-->
+  <OpponentDifficulty>Medium</OpponentDifficulty>
+</LaunchOptions>
