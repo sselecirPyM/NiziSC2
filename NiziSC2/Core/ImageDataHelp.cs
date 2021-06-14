@@ -10,11 +10,11 @@ namespace NiziSC2.Core
     {
         public static bool SamplePoint(this ImageData imageData, Vector2 position)
         {
-            return Query(imageData, new Int2((int)(position.X * (imageData.Size.X - 1)), (int)(position.Y * (imageData.Size.Y - 1))));
+            return Query(imageData, new Int2((int)(position.X * (imageData.Size.X - 1) + 0.5f), (int)(position.Y * (imageData.Size.Y - 1) + 0.5f)));
         }
         public static int SampleBytePoint(this ImageData imageData, Vector2 position)
         {
-            return GetDataValueByte(imageData,(int)(position.X * (imageData.Size.X - 1)), (int)(position.Y * (imageData.Size.Y - 1)));
+            return GetDataValueByte(imageData, (int)(position.X * (imageData.Size.X - 1) + 0.5f), (int)(position.Y * (imageData.Size.Y - 1) + 0.5f));
         }
 
 
@@ -30,7 +30,7 @@ namespace NiziSC2.Core
             int byteLocation = pixelID / 8;
             int bitLocation = pixelID % 8;
             var result = ((imageData.Data.Span[byteLocation] & (1 << (7 - bitLocation))) == 0) ? 0 : 1;
-            if(result!=0)
+            if (result != 0)
             {
 
             }

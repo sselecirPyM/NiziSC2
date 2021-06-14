@@ -44,4 +44,11 @@
   <VespeneBuilding>ZERG_EXTRACTOR</VespeneBuilding>
   <SupplyBuilding>ZERG_OVERLORD</SupplyBuilding>
   <Detector>ZERG_OVERSEER</Detector>
+
+  <Barracks>
+    <TechUnit>
+      <UnitType>ZERG_HATCHERY</UnitType>
+      <Spawner>ZERG_DRONE</Spawner>
+    </TechUnit>
+  </Barracks>
 </RaceData>

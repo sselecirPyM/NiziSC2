@@ -53,5 +53,16 @@ namespace NiziSC2.Core
 
             return true;
         }
+
+        public bool RectCheck(Int2 pos, Int2 size)
+        {
+            for (int x = 0; x < size.X; x++)
+                for (int y = 0; y < size.Y; y++)
+                {
+                    if (!Query(pos.X + x, pos.Y + y))
+                        return false;
+                }
+            return true;
+        }
     }
 }

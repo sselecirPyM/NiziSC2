@@ -11,13 +11,6 @@
       <Spawner>TERRAN_SCV</Spawner>
     </TechUnit>
     <TechUnit>
-      <UnitType>TERRAN_BARRACKS</UnitType>
-      <Spawner>TERRAN_SCV</Spawner>
-      <Depends>
-        <UnitType>TERRAN_SUPPLYDEPOT</UnitType>
-      </Depends>
-    </TechUnit>
-    <TechUnit>
       <UnitType>TERRAN_ENGINEERINGBAY</UnitType>
       <Spawner>TERRAN_SCV</Spawner>
       <Depends>
@@ -26,13 +19,6 @@
     </TechUnit>
     <TechUnit>
       <UnitType>TERRAN_BUNKER</UnitType>
-      <Spawner>TERRAN_SCV</Spawner>
-      <Depends>
-        <UnitType>TERRAN_BARRACKS</UnitType>
-      </Depends>
-    </TechUnit>
-    <TechUnit>
-      <UnitType>TERRAN_FACTORY</UnitType>
       <Spawner>TERRAN_SCV</Spawner>
       <Depends>
         <UnitType>TERRAN_BARRACKS</UnitType>
@@ -50,13 +36,6 @@
       <Spawner>TERRAN_SCV</Spawner>
       <Depends>
         <UnitType>TERRAN_BARRACKS</UnitType>
-      </Depends>
-    </TechUnit>
-    <TechUnit>
-      <UnitType>TERRAN_STARPORT</UnitType>
-      <Spawner>TERRAN_SCV</Spawner>
-      <Depends>
-        <UnitType>TERRAN_FACTORY</UnitType>
       </Depends>
     </TechUnit>
     <TechUnit>
@@ -125,6 +104,29 @@
       </Depends>
     </TechUnit>
   </TechUnits>
+  <Barracks>
+    <TechUnit>
+      <UnitType>TERRAN_BARRACKS</UnitType>
+      <Spawner>TERRAN_SCV</Spawner>
+      <Depends>
+        <UnitType>TERRAN_SUPPLYDEPOT</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>TERRAN_FACTORY</UnitType>
+      <Spawner>TERRAN_SCV</Spawner>
+      <Depends>
+        <UnitType>TERRAN_BARRACKS</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>TERRAN_STARPORT</UnitType>
+      <Spawner>TERRAN_SCV</Spawner>
+      <Depends>
+        <UnitType>TERRAN_FACTORY</UnitType>
+      </Depends>
+    </TechUnit>
+  </Barracks>
   <Worker>
     <UnitType>TERRAN_SCV</UnitType>
     <Spawner>TERRAN_COMMANDCENTER</Spawner>

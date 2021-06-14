@@ -290,7 +290,7 @@ namespace NiziSC2.Core
                 }
             }
 
-            return null;
+            return proj;
         }
         public List<UnitProjection> GetUnitProjectionsRefinery()
         {

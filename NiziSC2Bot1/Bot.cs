@@ -16,7 +16,6 @@ namespace NiziSC2Bot1
         public WriteableImageData placementGrid;
         public WriteableImageData nonResPlacementGrid;
         public NearGroup mineralGroup;
-        public BotActionFlag flags;
         public ImageScaledMap scaledVisMap = new ImageScaledMap();
 
         public void Initialize()
@@ -27,11 +26,12 @@ namespace NiziSC2Bot1
 
             scaledVisMap.Init(new Int2(16, 16));
 
-            var neutrals = gameContext.units.Where(u => { return u.Value.alliance == SC2APIProtocol.Alliance.Neutral; }).Select(u => { return u.Value; }).ToArray();
-            var minerals = neutrals.Where(u => { return UnitTypeInfo.MineralFields.Contains(u.type); }).ToArray();
+            var minerals = gameContext.GetMinerals();
+            var vespenes = gameContext.GetVespeneGeysers();
             foreach (var mineral in minerals)
             {
                 Int2 p = new Int2((int)mineral.position.X, (int)mineral.position.Y);
+
                 foreach (var p1 in TimeAndSpace.Box(p.X - 4, p.Y - 4, p.X + 4, p.Y + 4))
                 {
                     placementGrid.Write(p1, false);
@@ -42,7 +42,7 @@ namespace NiziSC2Bot1
                 }
             }
             mineralGroup = new NearGroup();
-            mineralGroup.BuildMineral(minerals, 15);
+            mineralGroup.BuildMineral(minerals, vespenes, gameContext.gameInfo.StartRaw.PlacementGrid, 15);
 
             for (int i = 0; i < mineralGroup.middlePoints.Count; i++)
             {
@@ -82,6 +82,8 @@ namespace NiziSC2Bot1
             var raceData = gameContext.raceDatas[player.race];
             var resourceCommandCenter = commandCenters.Where(u =>
             {
+                if (u.buildProgress < 1)
+                    return true;
                 for (int i = 0; i < mineralGroup.middlePoints.Count; i++)
                 {
                     Vector2 p = mineralGroup.middlePoints[i];
@@ -269,9 +271,9 @@ namespace NiziSC2Bot1
             {
                 if (player.FoodArmy > 50)
                     action.EnqueueAttack(army, enemies[0].position);
-                else if (player.FoodArmy > 30 && commandCenters.Length > 0 && Vector2.Distance(enemies[0].position, commandCenters[0].position) < 50)
+                else if (player.FoodArmy > 20 && commandCenters.Length > 0 && Vector2.Distance(enemies[0].position, commandCenters[0].position) < 50)
                     action.EnqueueAttack(army, enemies[0].position);
-                if (player.FoodArmy > 20)
+                if (player.FoodArmy > 15)
                 {
                     for (int i = 0; i < 1; i++)
                     {
@@ -286,7 +288,6 @@ namespace NiziSC2Bot1
             }
             else if (player.FoodArmy > 50)
             {
-                //action.EnqueueAttack(army, new Vector2(startLocations[0].X, startLocations[0].Y));
                 action.EnqueueAttack(army, attackPos);
             }
             UnitType barrack = UnitType.TERRAN_BARRACKS;
@@ -314,16 +315,6 @@ namespace NiziSC2Bot1
                                 action.EnqueueBuild(unit.Tag, raceData.SupplyBuilding, pos);
                         }
                     }
-                    if (barracks.Count < (commandCenters.Length > 2 ? 10 : 3))
-                    {
-                        if (gameContext.Afford(barrack))
-                        {
-                            var unit = GetRandom(workers);
-                            Vector2 pos = RandomPosition(unit.position, 10);
-                            if (nonResPlacementGrid.Query((int)pos.X, (int)pos.Y))
-                                action.EnqueueBuild(unit.Tag, barrack, pos);
-                        }
-                    }
                 }
                 else
                 {
@@ -337,7 +328,20 @@ namespace NiziSC2Bot1
                         }
                     }
                 }
-                if (GetUnitVirtualCount(barrack) > 2 && (gameContext.frame & 8) > 0 || player.FoodWorkers >= 16 && player.VespeneStat.current < 500)
+                foreach (var barrack1 in raceData.Barracks)
+                {
+                    if (barrack1.UnitType != raceData.ResourceBuilding && gameContext.GetPlayerUnits(barrack1.UnitType).Count < (commandCenters.Length > 2 ? 10 : 3))
+                    {
+                        if (gameContext.Afford(barrack1.UnitType))
+                        {
+                            var unit = GetRandom(workers);
+                            Vector2 pos = RandomPosition(unit.position, 10);
+                            if (nonResPlacementGrid.Query((int)pos.X, (int)pos.Y))
+                                action.EnqueueBuild(unit.Tag, barrack1.UnitType, pos);
+                        }
+                    }
+                }
+                if (((gameContext.frame & 8) > 0 && player.FoodWorkers >= 16) && player.VespeneStat.current < 500)
                     foreach (var geyser in geysersCanBuild)
                     {
                         if (gameContext.Afford(raceData.VespeneBuilding))
@@ -367,20 +371,12 @@ namespace NiziSC2Bot1
                 }
             }
             bool EnoughWorker = commandCenters.All(u => { return u.assignedHarvesters >= u.idealHarvesters; });
-            if (player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 20 + 10 || (EnoughWorker && commandCenters.Length > 2 && resourceCommandCenter.Length < 3) || player.MineralStat.current > 1000)
-            {
-                flags |= BotActionFlag.Expand;
-            }
-            else
-            {
-                flags &= ~BotActionFlag.Expand;
-            }
+            bool expand = player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 20 + 10 || (EnoughWorker && commandCenters.Length > 2 && resourceCommandCenter.Length < 3) || player.MineralStat.current > 1000;
+            //expand = true;
 
-            if (!flags.HasFlag(BotActionFlag.Expand) || player.MineralStat.current > 800)
+            if (!expand || player.MineralStat.current > 800)
                 foreach (var techUnit in raceData.TechUnits)
                 {
-                    //if (UnitTypeInfo.Workers.Contains(techUnit.UnitType)) continue;
-
                     var spawners = GetUnits(techUnit.Spawner);
                     //var techUnits = GetUnits(techUnit.UnitType);
                     if (!UnitTypeInfo.Workers.Contains(techUnit.Spawner))
@@ -405,10 +401,10 @@ namespace NiziSC2Bot1
                                     action.EnqueueBuild(spawner.Tag, techUnit.UnitType, pos);
                             }
                         }
-
                     }
                 }
-            if (flags.HasFlag(BotActionFlag.Expand))
+            var commandCenterProjection = gameContext.GetUnitProjections(raceData.ResourceBuilding);
+            if (expand)
             {
                 if (gameContext.Afford(raceData.SupplyBuilding))
                 {
@@ -416,35 +412,23 @@ namespace NiziSC2Bot1
 
 
                     bool _stop1 = false;
-                    for (int l = 0; l < 10; l++)
+                    var expandPoint1 = GetRandom(mineralGroup.middlePoints);
+
+                    foreach (var commandCenter in commandCenterProjection)
                     {
-                        var expandPoint1 = GetRandom(mineralGroup.middlePoints);
-                        foreach (var commandCenter in commandCenters)
+                        var distance = Vector2.Distance(commandCenter.position, expandPoint1);
+                        if (distance > 10 && distance < 50)
                         {
-                            var distance = Vector2.Distance(commandCenter.position, expandPoint1);
-                            if (distance > 10 && distance < 50)
-                            {
-                                expandPoint = expandPoint1;
-                                _stop1 = true;
-                                break;
-                            }
+                            expandPoint = expandPoint1;
+                            _stop1 = true;
+                            break;
                         }
-                        if (_stop1) break;
                     }
                     if (_stop1 && workers.Count > 0)
                     {
                         var spawner = GetRandom(workers);
-                        for (int l = 0; l < 5; l++)
-                        {
-                            Vector2 pos = RandomPosition(expandPoint, 3);
-                            if (placementGrid.Query((int)pos.X, (int)pos.Y))
-                            {
-                                action.EnqueueBuild(spawner.Tag, raceData.ResourceBuilding, pos);
-                                break;
-                            }
-                        }
+                        action.EnqueueBuild(spawner.Tag, raceData.ResourceBuilding, expandPoint);
                     }
-
                 }
             }
             if (!EnoughWorker && player.FoodWorkers < 80)
@@ -478,14 +462,6 @@ namespace NiziSC2Bot1
         public T GetRandom<T>(IList<T> list)
         {
             return list[random.Next(0, list.Count)];
-        }
-
-        [Flags]
-        public enum BotActionFlag
-        {
-            None = 0,
-            Expand = 1,
-            Attack = 2,
         }
     }
 }

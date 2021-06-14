@@ -11,10 +11,6 @@
       <Spawner>PROTOSS_PROBE</Spawner>
     </TechUnit>
     <TechUnit>
-      <UnitType>PROTOSS_GATEWAY</UnitType>
-      <Spawner>PROTOSS_PROBE</Spawner>
-    </TechUnit>
-    <TechUnit>
       <UnitType>PROTOSS_ZEALOT</UnitType>
       <Spawner>PROTOSS_GATEWAY</Spawner>
     </TechUnit>
@@ -86,24 +82,10 @@
       </Depends>
     </TechUnit>
     <TechUnit>
-      <UnitType>PROTOSS_ROBOTICSFACILITY</UnitType>
-      <Spawner>PROTOSS_PROBE</Spawner>
-      <Depends>
-        <UnitType>PROTOSS_CYBERNETICSCORE</UnitType>
-      </Depends>
-    </TechUnit>
-    <TechUnit>
       <UnitType>PROTOSS_ROBOTICSBAY</UnitType>
       <Spawner>PROTOSS_PROBE</Spawner>
       <Depends>
         <UnitType>PROTOSS_ROBOTICSFACILITY</UnitType>
-      </Depends>
-    </TechUnit>
-    <TechUnit>
-      <UnitType>PROTOSS_STARGATE</UnitType>
-      <Spawner>PROTOSS_PROBE</Spawner>
-      <Depends>
-        <UnitType>PROTOSS_CYBERNETICSCORE</UnitType>
       </Depends>
     </TechUnit>
     <TechUnit>
@@ -148,6 +130,26 @@
     <UnitType>PROTOSS_PROBE</UnitType>
     <Spawner>PROTOSS_NEXUS</Spawner>
   </Worker>
+  <Barracks>
+    <TechUnit>
+      <UnitType>PROTOSS_GATEWAY</UnitType>
+      <Spawner>PROTOSS_PROBE</Spawner>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>PROTOSS_ROBOTICSFACILITY</UnitType>
+      <Spawner>PROTOSS_PROBE</Spawner>
+      <Depends>
+        <UnitType>PROTOSS_CYBERNETICSCORE</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>PROTOSS_STARGATE</UnitType>
+      <Spawner>PROTOSS_PROBE</Spawner>
+      <Depends>
+        <UnitType>PROTOSS_CYBERNETICSCORE</UnitType>
+      </Depends>
+    </TechUnit>
+  </Barracks>
   <ResourceBuilding>PROTOSS_NEXUS</ResourceBuilding>
   <VespeneBuilding>PROTOSS_ASSIMILATOR</VespeneBuilding>
   <SupplyBuilding>PROTOSS_PYLON</SupplyBuilding>

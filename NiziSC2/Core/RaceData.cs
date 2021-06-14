@@ -14,6 +14,7 @@ namespace NiziSC2.Core
     {
         public SC2APIProtocol.Race Race;
         public List<TechUnit> TechUnits;
+        public List<TechUnit> Barracks;
         public TechUnit Worker;
         public UnitType ResourceBuilding;
         public UnitType VespeneBuilding;
