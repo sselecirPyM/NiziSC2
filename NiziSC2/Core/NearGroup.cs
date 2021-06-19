@@ -13,14 +13,12 @@ namespace NiziSC2.Core
     {
         public List<UnitSet> nearUnits;
         public List<Vector2> middlePoints;
-        public List<bool> debugArray;
 
         public void BuildMineral(IEnumerable<Unit> minerals, IEnumerable<Unit> vespenes, SC2APIProtocol.ImageData placementData, float range)
         {
             System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
             nearUnits = new List<UnitSet>();
             middlePoints = new List<Vector2>();
-            debugArray = new List<bool>();
             //List<Unit> sortedUnits = units.ToList();
             //sortedUnits.Sort((u1, u2) => u1.position.X.CompareTo(u2.position.X));
             foreach (var unit in minerals)
@@ -61,7 +59,6 @@ namespace NiziSC2.Core
                 }
                 ad /= unitGroup.Count;
                 middlePoints.Add(ad);
-                debugArray.Add(false);
             }
             watch.Stop();
             WriteableImageData writeableImageData = new WriteableImageData(placementData);
@@ -109,7 +106,6 @@ namespace NiziSC2.Core
                         {
                             middlePoints[i] = new Vector2(baseBuildPoint.X + 2.5f, baseBuildPoint.Y + 2.5f);
                             dist1 = dist2;
-                            debugArray[i] = true;
                         }
                     }
                 }

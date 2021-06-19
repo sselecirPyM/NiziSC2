@@ -5,7 +5,9 @@ VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NiziSC2", "NiziSC2\NiziSC2.csproj", "{EE16E691-9FF4-402B-AF98-A5FD3A6F352A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiziSC2Bot1", "NiziSC2Bot1\NiziSC2Bot1.csproj", "{A3A368CD-C99D-482D-9DB3-D255D2042D3A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NiziSC2Bot1", "NiziSC2Bot1\NiziSC2Bot1.csproj", "{A3A368CD-C99D-482D-9DB3-D255D2042D3A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiningMachine", "MiningMachine\MiningMachine.csproj", "{87CD24A8-14EE-4360-86DD-2632F1223E56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{A3A368CD-C99D-482D-9DB3-D255D2042D3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3A368CD-C99D-482D-9DB3-D255D2042D3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A3A368CD-C99D-482D-9DB3-D255D2042D3A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87CD24A8-14EE-4360-86DD-2632F1223E56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87CD24A8-14EE-4360-86DD-2632F1223E56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87CD24A8-14EE-4360-86DD-2632F1223E56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87CD24A8-14EE-4360-86DD-2632F1223E56}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

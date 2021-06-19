@@ -70,6 +70,10 @@
       <Spawner>TERRAN_FACTORY</Spawner>
     </TechUnit>
     <TechUnit>
+      <UnitType>TERRAN_HELLIONTANK</UnitType>
+      <Spawner>TERRAN_FACTORY</Spawner>
+    </TechUnit>
+    <TechUnit>
       <UnitType>TERRAN_THOR</UnitType>
       <Spawner>TERRAN_FACTORY</Spawner>
       <Depends>

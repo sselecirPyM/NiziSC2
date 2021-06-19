@@ -11,7 +11,7 @@ namespace NiziSC2.Core
 {
     public class GameContext
     {
-        public LaunchOptions launchOptions;
+        //public LaunchOptions launchOptions;
         public ResponseGameInfo gameInfo;
         public ResponseData gameData;
         public ResponseObservation observation;
@@ -181,13 +181,16 @@ namespace NiziSC2.Core
 
         public void RemoveUnitDeactivated()
         {
-            //HashSet<ulong> deathUnits = new HashSet<ulong>();
-            //foreach (var unit in units)
-            //    if (unit.Value.health == 0 && unit.Value.healthMax != 0)
-            //        deathUnits.Add(unit.Key);
+            //if (observation.Observation.RawData?.Event?.DeadUnits == null) return;
+            //HashSet<ulong> deathUnits = new HashSet<ulong>(observation.Observation.RawData.Event.DeadUnits);
+
             //foreach (var unit in deathUnits)
             //{
-            //    units.Remove(unit);
+            //    bool test= units.Remove(unit);
+            //}
+            //foreach (var unit in deathUnits)
+            //{
+            //    bool test= unitLose.Remove(unit);
             //}
         }
 
@@ -218,9 +221,14 @@ namespace NiziSC2.Core
             return gameData.Units[(int)unitType].Name;
         }
 
-        public UnitType GetUnitEqualType(UnitType unitType)
+        public bool GetUnitEqualType(UnitType unitType, UnitType other)
         {
-            return (UnitType)gameData.Units[(int)unitType].UnitAlias;
+            foreach (var alias in gameData.Units[(int)unitType].TechAlias)
+            {
+                if (other == (UnitType)alias)
+                    return true;
+            }
+            return false;
         }
         Dictionary<SC2APIProtocol.Alliance, List<Unit>> cache1 = new Dictionary<Alliance, List<Unit>>();
         Dictionary<UnitType, List<Unit>> playerUnits = new Dictionary<UnitType, List<Unit>>();
@@ -239,7 +247,7 @@ namespace NiziSC2.Core
         {
             if (!playerUnits.TryGetValue(unitType, out var u1))
             {
-                u1 = GetUnits(Alliance.Self).Where(u => { return (u.type == unitType || GetUnitEqualType(u.type) == unitType) && u.buildProgress == 1; }).ToList();
+                u1 = GetUnits(Alliance.Self).Where(u => { return (u.type == unitType || GetUnitEqualType(u.type, unitType)) && u.buildProgress == 1; }).ToList();
                 playerUnits[unitType] = u1;
             }
             return u1;
@@ -277,15 +285,47 @@ namespace NiziSC2.Core
         public List<UnitProjection> GetUnitProjections(UnitType unitType)
         {
             List<UnitProjection> proj = new List<UnitProjection>();
-            proj.AddRange(GetUnits(Alliance.Self).Where(u => { return (u.type == unitType || GetUnitEqualType(u.type) == unitType); })
+            proj.AddRange(GetUnits(Alliance.Self).Where(u => { return (u.type == unitType || GetUnitEqualType(u.type, unitType)); })
                 .Select(u => { return new UnitProjection { position = u.position, Tag = u.Tag, unitType = u.type, }; }));
-            foreach (var u in GetWorkers())
+            foreach (var spawner in GetWorkers())
             {
-                foreach (var order in u.orders)
+                foreach (var order in spawner.orders)
+                {
+                    if (buildId2Units.TryGetValue(order.AbilityId, out var unitType1) && order.TargetUnitTag == 0 && unitType1 == unitType)
+                    {
+                        if (order.TargetWorldSpacePos == null)
+                        {
+                            proj.Add(new UnitProjection { position = spawner.position, Tag = 0, unitType = unitType1, });
+                        }
+                        else
+                        {
+                            proj.Add(new UnitProjection { position = new System.Numerics.Vector2(order.TargetWorldSpacePos.X, order.TargetWorldSpacePos.Y), Tag = 0, unitType = unitType1, });
+                        }
+                    }
+                }
+            }
+
+            return proj;
+        }
+        public List<UnitProjection> GetUnitProjections(HashSet<UnitType> unitType)
+        {
+            List<UnitProjection> proj = new List<UnitProjection>();
+            proj.AddRange(GetUnits(Alliance.Self).Where(u => { return unitType.Contains(u.type); })
+                .Select(u => { return new UnitProjection { position = u.position, Tag = u.Tag, unitType = u.type, }; }));
+            foreach (var spawner in GetWorkers())
+            {
+                foreach (var order in spawner.orders)
                 {
                     if (buildId2Units.TryGetValue(order.AbilityId, out var unitType1) && order.TargetUnitTag == 0)
                     {
-                        proj.Add(new UnitProjection { position = u.position, Tag = 0, unitType = u.type, });
+                        if (order.TargetWorldSpacePos == null)
+                        {
+                            proj.Add(new UnitProjection { position = spawner.position, Tag = 0, unitType = unitType1, });
+                        }
+                        else
+                        {
+                            proj.Add(new UnitProjection { position = new System.Numerics.Vector2(order.TargetWorldSpacePos.X, order.TargetWorldSpacePos.Y), Tag = 0, unitType = unitType1, });
+                        }
                     }
                 }
             }
@@ -321,7 +361,7 @@ namespace NiziSC2.Core
             {
                 if (techUnit.Depends == null || techUnit.Depends.Count == 0)
                     return true;
-                foreach(var depend in techUnit.Depends)
+                foreach (var depend in techUnit.Depends)
                 {
                     if (GetPlayerUnits(depend).Count == 0)
                     {

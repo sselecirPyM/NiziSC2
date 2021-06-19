@@ -53,7 +53,7 @@ namespace NiziSC2.Core
             var cmd = Command(UnitTypeInfo.GetBuildAbility(gameContext.gameData, unitType));
             cmd.ActionRaw.UnitCommand.UnitTags.Add(unit);
             actions.Add(cmd);
-            System.Diagnostics.Debug.WriteLine(string.Format("Start train {0}", gameContext.GetUnitName(unitType)), "Nizi");
+            System.Diagnostics.Debug.WriteLine(string.Format("Start training {0}", gameContext.GetUnitName(unitType)), "Nizi");
         }
 
         public void EnqueueBuild(ulong unit, UnitType unitType, Vector2 position)
@@ -64,7 +64,7 @@ namespace NiziSC2.Core
             cmd.ActionRaw.UnitCommand.TargetWorldSpacePos.X = position.X;
             cmd.ActionRaw.UnitCommand.TargetWorldSpacePos.Y = position.Y;
             actions.Add(cmd);
-            System.Diagnostics.Debug.WriteLine(string.Format("Start build {0}", gameContext.GetUnitName(unitType)), "Nizi");
+            System.Diagnostics.Debug.WriteLine(string.Format("Start building {0}", gameContext.GetUnitName(unitType)), "Nizi");
         }
 
         public void EnqueueBuild(ulong unit, UnitType unitType, ulong target)
@@ -72,7 +72,7 @@ namespace NiziSC2.Core
             var cmd = Command(UnitTypeInfo.GetBuildAbility(gameContext.gameData, unitType), target);
             cmd.ActionRaw.UnitCommand.UnitTags.Add(unit);
             actions.Add(cmd);
-            System.Diagnostics.Debug.WriteLine(string.Format("Start build {0}", gameContext.GetUnitName(unitType)), "Nizi");
+            System.Diagnostics.Debug.WriteLine(string.Format("Start building {0}", gameContext.GetUnitName(unitType)), "Nizi");
         }
 
         public void UnitsAction(SC2APIProtocol.Action action, IEnumerable<Unit> units)

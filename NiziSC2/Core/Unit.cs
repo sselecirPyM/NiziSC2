@@ -39,6 +39,7 @@ namespace NiziSC2.Core
         public int mineralContents;
         public int vespeneContents;
         public ulong addOnTag;
+        public ulong engagedTargetTag;
         public List<SC2APIProtocol.UnitOrder> orders = new List<SC2APIProtocol.UnitOrder>();
 
         public void RawDataUpdate(SC2APIProtocol.Unit unit)
@@ -69,8 +70,9 @@ namespace NiziSC2.Core
             orders.Clear();
             orders.AddRange(unit.Orders);
             addOnTag = unit.AddOnTag;
+            engagedTargetTag = unit.EngagedTargetTag;
             mineralContents = unit.MineralContents;
-            vespeneContents=unit.VespeneContents;
+            vespeneContents = unit.VespeneContents;
             //tracking = true;
         }
     }
