@@ -439,7 +439,7 @@ namespace MiningNachine
                 if (cancelCount > 0 || player.MineralStat.current > 2000)
                     foreach (var barrack1 in raceData.Barracks)
                     {
-                        if (barrack1.UnitType != raceData.ResourceBuilding && GetUnitVirtualCount(barrack1.UnitType) < player.SupplyProvide / 14)
+                        if (barrack1.UnitType != raceData.ResourceBuilding && GetUnitVirtualCount(barrack1.UnitType) < player.SupplyProvide / 17)
                         {
                             if (gameContext.Afford(barrack1.UnitType))
                             {
@@ -455,15 +455,23 @@ namespace MiningNachine
                     {
                         if (gameContext.Afford(raceData.VespeneBuilding))
                         {
-                            var unit = GetRandom(workers);
+                            Unit unit = GetRandom(workers);
+                            for (int i = 0; i < 3; i++)
+                            {
+                                var unit1 = GetRandom(workers);
+                                if (Vector2.DistanceSquared(unit.position, geyser.position) > Vector2.DistanceSquared(unit1.position, geyser.position))
+                                {
+                                    unit = unit1;
+                                }
+                            }
                             action.EnqueueBuild(unit.Tag, raceData.VespeneBuilding, geyser.Tag);
                         }
                     }
                 foreach (var refinery in refineries)
                 {
-                    if (refinery.buildProgress == 1 && refinery.vespeneContents > 0 && player.VespeneStat.current < 500 && refinerWorkerCount * 8 < workers.Count)
+                    if (refinery.buildProgress == 1 && refinery.vespeneContents > 0 && player.VespeneStat.current < 500)
                     {
-                        if (refinery.assignedHarvesters < 3)
+                        if (refinery.assignedHarvesters < 3 && refinerWorkerCount * 5 < workers.Count)
                         {
                             var unit = GetRandom(workers);
                             action.EnqueueSmart(new[] { unit }, refinery.Tag);
@@ -480,7 +488,7 @@ namespace MiningNachine
                 }
             }
             bool EnoughWorker = commandCenters.All(u => { return u.assignedHarvesters >= u.idealHarvesters; });
-            bool expand = player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 20 || EnoughWorker || player.MineralStat.current > 1000 || (cancelCount == 0 && commandCenters.Length < 7);
+            bool expand = player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 20 || EnoughWorker || player.MineralStat.current > 1000 || (cancelCount == 0 && commandCenters.Length < 4);
             //expand = true;
 
             if ((cancelCount > 0) || player.MineralStat.current > 2000 || commandCenters.Length > mineralGroup.middlePoints.Count / 2)
