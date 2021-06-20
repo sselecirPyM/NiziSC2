@@ -17,7 +17,7 @@ namespace NiziSC2.Core
         public void Connect(string address, int port)
         {
             System.Diagnostics.Debug.WriteLine("Game connecting..", "Nizi");
-            int maxTryCount = 100;
+            int maxTryCount = 30;
             int count = 0;
             while (count < maxTryCount)
             {

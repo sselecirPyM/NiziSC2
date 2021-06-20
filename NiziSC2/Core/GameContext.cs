@@ -277,7 +277,7 @@ namespace NiziSC2.Core
             string vespeneGeysers = "VespeneGeysers";
             if (!anotherCache.TryGetValue(vespeneGeysers, out var u1))
             {
-                u1 = GetUnits(Alliance.Neutral).Where(u => { return UnitTypeInfo.VespeneGeysers.Contains(u.type); }).ToList();
+                u1 = GetUnits(Alliance.Neutral).Where(u => { return u.vespeneContents > 1; }).ToList();
                 anotherCache[vespeneGeysers] = u1;
             }
             return u1;

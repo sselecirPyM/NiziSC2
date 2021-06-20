@@ -63,6 +63,12 @@ namespace NiziSC2.Core
             UnitType.PROTOSS_GATEWAY,
             UnitType.PROTOSS_WARPGATE,
         };
+        public static HashSet<UnitType> WidowMine = new HashSet<UnitType>()
+        {
+            UnitType.TERRAN_WIDOWMINE,
+            UnitType.TERRAN_WIDOWMINEBURROWED,
+        };
+
         public static HashSet<UnitType> Refinery = new HashSet<UnitType>()
         {
             UnitType.TERRAN_REFINERY,

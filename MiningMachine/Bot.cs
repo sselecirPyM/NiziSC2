@@ -252,7 +252,7 @@ namespace MiningNachine
 
             foreach (var commandCenter in commandCenters)
             {
-                if (commandCenter.type == UnitType.TERRAN_COMMANDCENTER && player.VespeneStat.current >= 1000)
+                if (commandCenter.type == UnitType.TERRAN_COMMANDCENTER && player.VespeneStat.current >= 200)
                 {
                     action.EnqueueAbility(new[] { commandCenter }, Abilities.MORPH_PLANETARYFORTRESS);
                 }
@@ -363,9 +363,16 @@ namespace MiningNachine
             var pos1 = scaledVisMap.GetPos(scaledVisMap.GetLow(out _));
             Vector2 attackPos = pos1 * new Vector2(visibility.Size.X, visibility.Size.Y);
             float foodArmyReal = army.Sum(u => gameContext.gameData.Units[(int)u.type].FoodRequired);
-            var army2 = army.Where(u => u.weaponCooldown < 0.1);
-            var army3 = army.Where(u => u.weaponCooldown >= 0.1);
-            foreach (var unit in army3)
+            var widowMines = army.Where(u => UnitTypeInfo.WidowMine.Contains(u.type));
+
+            var army4 = army.Where(u => u.weaponCooldown < 0.1);
+            var army5 = army.Where(u => u.weaponCooldown >= 0.1);
+            if (foodArmyReal < 70)
+                action.EnqueueAbility(widowMines.Where(u => u.type == UnitType.TERRAN_WIDOWMINE), Abilities.BURROWDOWN_WIDOWMINE);
+            else
+                action.EnqueueAbility(widowMines.Where(u => u.type == UnitType.TERRAN_WIDOWMINEBURROWED), Abilities.BURROWUP_WIDOWMINE);
+
+            foreach (var unit in army5)
             {
                 if (unit.engagedTargetTag != 0 && gameContext.units.TryGetValue(unit.engagedTargetTag, out var enemy))
                 {
@@ -391,7 +398,7 @@ namespace MiningNachine
                 Vector2 enemiesPosition = actualEnemy.position;
 
                 if (foodArmyReal >= 50)
-                    action.EnqueueAttack(army2, enemiesPosition);
+                    action.EnqueueAttack(army4, enemiesPosition);
                 //else if (foodArmyReal >= 20 && commandCenters.Length > 0 &&commandCenters.Any(u=>Vector2.Distance(enemiesPosition, u.position) < 40) )
                 //    action.EnqueueAttack(army2, enemiesPosition);
                 if (foodArmyReal >= 15)
@@ -409,7 +416,7 @@ namespace MiningNachine
             }
             else if (foodArmyReal >= 40 && (gameContext.frame & 16) != 0)
             {
-                action.EnqueueAttack(army2, attackPos);
+                action.EnqueueAttack(army4, attackPos);
             }
 
             if (workers.Count > 0)
@@ -469,9 +476,9 @@ namespace MiningNachine
                     }
                 foreach (var refinery in refineries)
                 {
-                    if (refinery.buildProgress == 1 && refinery.vespeneContents > 0 && player.VespeneStat.current < 500)
+                    if (refinery.buildProgress == 1 && refinery.vespeneContents > 0 && player.VespeneStat.current < 800)
                     {
-                        if (refinery.assignedHarvesters < 3 && refinerWorkerCount * 5 < workers.Count)
+                        if (refinery.assignedHarvesters < 3 && refinerWorkerCount * 4 < workers.Count)
                         {
                             var unit = GetRandom(workers);
                             action.EnqueueSmart(new[] { unit }, refinery.Tag);

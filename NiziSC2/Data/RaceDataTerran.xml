@@ -58,6 +58,10 @@
       <Spawner>TERRAN_BARRACKS</Spawner>
     </TechUnit>
     <TechUnit>
+      <UnitType>TERRAN_WIDOWMINE</UnitType>
+      <Spawner>TERRAN_FACTORY</Spawner>
+    </TechUnit>
+    <TechUnit>
       <UnitType>TERRAN_HELLION</UnitType>
       <Spawner>TERRAN_FACTORY</Spawner>
     </TechUnit>
