@@ -97,7 +97,7 @@ namespace NiziSC2.Core
                 Vector2 point = middlePoints[i];
                 Int2 p1 = new Int2((int)point.X, (int)point.Y);
                 float dist1 = 9999999999;
-                foreach (var baseBuildPoint in TimeAndSpace.Box(p1.X - 8, p1.Y - 8, p1.X + 7, p1.Y + 75))
+                foreach (var baseBuildPoint in TimeAndSpace.Box(p1.X - 9, p1.Y - 9, p1.X + 9, p1.Y + 9))
                 {
                     if (writeableImageData.RectCheck(baseBuildPoint, new Int2(5, 5)))
                     {

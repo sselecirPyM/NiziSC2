@@ -20,6 +20,7 @@ namespace NiziSC2.Core
         public Dictionary<ulong, Unit> units = new Dictionary<ulong, Unit>();
         public Dictionary<ulong, Unit> unitLose = new Dictionary<ulong, Unit>();
         public Dictionary<uint, UnitType> buildId2Units = new Dictionary<uint, UnitType>();
+        public Dictionary<uint, UpgradeType> upgradeCmd2Upgrade = new Dictionary<uint, UpgradeType>();
         public Dictionary<Race, RaceData> raceDatas;
         public Dictionary<UnitType, TechUnit> type2Tech = new Dictionary<UnitType, TechUnit>();
         public Race playerRace;
@@ -108,6 +109,10 @@ namespace NiziSC2.Core
             foreach (var unitType in gameData.Units)
             {
                 buildId2Units[unitType.AbilityId] = (UnitType)unitType.UnitId;
+            }
+            foreach (var upgrade in gameData.Upgrades)
+            {
+                upgradeCmd2Upgrade[upgrade.AbilityId] = (UpgradeType)upgrade.UpgradeId;
             }
         }
 

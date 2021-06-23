@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NiziSC2", "NiziSC2\NiziSC2.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NiziSC2Bot1", "NiziSC2Bot1\NiziSC2Bot1.csproj", "{A3A368CD-C99D-482D-9DB3-D255D2042D3A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiningMachine", "MiningMachine\MiningMachine.csproj", "{87CD24A8-14EE-4360-86DD-2632F1223E56}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MiningMachine", "MiningMachine\MiningMachine.csproj", "{87CD24A8-14EE-4360-86DD-2632F1223E56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
