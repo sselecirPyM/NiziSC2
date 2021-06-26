@@ -3,7 +3,7 @@
   <Map>WorldofSleepersLE.SC2Map</Map>
   <Port>5678</Port>
   <Address>127.0.0.1</Address>
-  <OurRace>Terran</OurRace>
+  <OurRace>Zerg</OurRace>
   <OpponentRace>Random</OpponentRace>
   <!--<OpponentRace>Zerg</OpponentRace>-->
   <OpponentDifficulty>VeryHard</OpponentDifficulty>

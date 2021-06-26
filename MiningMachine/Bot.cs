@@ -6,7 +6,7 @@ using System.Numerics;
 using NiziSC2.Core;
 using System.Threading.Tasks;
 
-namespace MiningNachine
+namespace MiningMachine
 {
     public class Bot
     {
@@ -46,20 +46,6 @@ namespace MiningNachine
             mineralGroup = new NearGroup();
             mineralGroup.BuildMineral(minerals, vespenes, gameContext.gameInfo.StartRaw.PlacementGrid, 15);
 
-            for (int i = 0; i < mineralGroup.middlePoints.Count; i++)
-            {
-                Vector2 middlePoint = mineralGroup.middlePoints[i];
-                if (!placementGrid.Query((int)middlePoint.X, (int)middlePoint.Y))
-                    for (int l = 0; l < 100; l++)
-                    {
-                        Vector2 middlePoint1 = RandomPosition(middlePoint, 4);
-                        if (placementGrid.Query((int)middlePoint1.X, (int)middlePoint1.Y))
-                        {
-                            mineralGroup.middlePoints[i] = middlePoint1;
-                            break;
-                        }
-                    }
-            }
             foreach (var middlePoint in mineralGroup.middlePoints)
             {
                 var p = new Int2((int)middlePoint.X, (int)middlePoint.Y);
@@ -93,11 +79,8 @@ namespace MiningNachine
                     Vector2 p = mineralGroup.middlePoints[i];
                     if (Vector2.Distance(p, u.position) < 5)
                     {
-                        foreach (var mineral in mineralGroup.nearUnits[i])
-                        {
-                            if (mineral.health > 0)
-                                return true;
-                        }
+                        if (mineralGroup.nearUnits[i].Any(u1 => u1.health > 0))
+                            return true;
                     }
                 }
                 return false;
@@ -121,58 +104,7 @@ namespace MiningNachine
                 return false;
             }).ToArray();
             var needAddons = playerUnits.Where(u => { return UnitTypeInfo.NeedAddon.Contains(u.type) && u.addOnTag == 0 && u.orders.Count == 0; }).ToArray();
-            var unitBuildRequst = new Dictionary<UnitType, int>();
-            var unitVirtualCount = new Dictionary<UnitType, int>();
 
-            foreach (var unit in playerUnits)
-            {
-                foreach (var order in unit.orders)
-                {
-                    if (gameContext.buildId2Units.TryGetValue(order.AbilityId, out var buildUnitType))
-                    {
-                        if (unitVirtualCount.ContainsKey(buildUnitType))
-                        {
-                            unitVirtualCount[buildUnitType]++;
-                        }
-                        else
-                        {
-                            unitVirtualCount[buildUnitType] = 1;
-                        }
-                    }
-                }
-
-                var unitData = gameContext.gameData.Units[(int)unit.type];
-                foreach (var alias in unitData.TechAlias)
-                {
-                    var alias1 = (UnitType)alias;
-                    if (unitVirtualCount.ContainsKey(alias1))
-                    {
-                        unitVirtualCount[alias1]++;
-                    }
-                    else
-                    {
-                        unitVirtualCount[alias1] = 1;
-                    }
-                }
-
-                if (unitVirtualCount.ContainsKey(unit.type))
-                {
-                    unitVirtualCount[unit.type]++;
-                }
-                else
-                {
-                    unitVirtualCount[unit.type] = 1;
-                }
-
-                if (unitVirtualCount.ContainsKey((UnitType)unitData.UnitAlias))
-                {
-                    unitVirtualCount[(UnitType)unitData.UnitAlias]++;
-                }
-                else
-                {
-                    unitVirtualCount[(UnitType)unitData.UnitAlias] = 1;
-                }
-            }
             var geysersCanBuild = geysers.Where(u =>
             {
                 if (u.healthMax == 0) return false;
@@ -180,7 +112,7 @@ namespace MiningNachine
                     if (Vector2.Distance(u.position, commandCenter.position) < 15)
                     {
                         foreach (var refinery in refineriesProjection)
-                            if (Vector2.Distance(refinery.position, u.position) < 2)
+                            if (Vector2.Distance(refinery.position, u.position) < 1)
                                 return false;
                         return true;
                     }
@@ -207,7 +139,7 @@ namespace MiningNachine
             }
             int GetUnitVirtualCount(UnitType _unitType)
             {
-                unitVirtualCount.TryGetValue(_unitType, out int value);
+                gameContext.unitVirtualCount.TryGetValue(_unitType, out int value);
                 return value;
             }
             int workerTest1 = 0;
@@ -232,18 +164,15 @@ namespace MiningNachine
                             player.SupplyProvideVirtual += gameContext.gameData.Units[(int)unitType].FoodProvided;
                     }
                     Abilities abil = (Abilities)order.AbilityId;
-                    if (workerTest1 < 1 && (abil == Abilities.HARVEST_GATHER_SCV || abil == Abilities.HARVEST_GATHER_DRONE || abil == Abilities.HARVEST_GATHER_PROBE))
+                    if (workerTest1 < 1 && AbilitiesInfo.Harvest.Contains(abil))
                     {
                         if (gameContext.units.TryGetValue(order.TargetUnitTag, out var target) && minerals1.Contains(target))
                         {
-                            foreach (var commandCenter in commandCenters)
+                            bool fullWorkers = commandCenters.Any(u => Vector2.Distance(u.position, target.position) < 15 && u.assignedHarvesters > u.idealHarvesters);
+                            if (fullWorkers)
                             {
-                                if (Vector2.Distance(commandCenter.position, target.position) < 15 && commandCenter.assignedHarvesters > commandCenter.idealHarvesters)
-                                {
-                                    action.EnqueueAbility(new[] { unit1 }, Abilities.STOP);
-                                    workerTest1++;
-                                    break;
-                                }
+                                action.EnqueueAbility(new[] { unit1 }, Abilities.STOP);
+                                workerTest1++;
                             }
                         }
                     }
@@ -252,7 +181,7 @@ namespace MiningNachine
 
             foreach (var commandCenter in commandCenters)
             {
-                if (commandCenter.type == UnitType.TERRAN_COMMANDCENTER && player.VespeneStat.current >= 200)
+                if (commandCenter.type == UnitType.TERRAN_COMMANDCENTER && player.VespeneStat.current >= 200 && commandCenter.orders.Count == 0)
                 {
                     action.EnqueueAbility(new[] { commandCenter }, Abilities.MORPH_PLANETARYFORTRESS);
                 }
@@ -275,73 +204,14 @@ namespace MiningNachine
                 }
             }
 
-            foreach (var engineeringBay in GetUnits(UnitType.TERRAN_ENGINEERINGBAY))
+            foreach (var unitType in gameContext.AutoCast.AutoResearches)
             {
-                if (engineeringBay.orders.Count == 0)
+                foreach (var researcher in GetUnits(unitType.Unit))
                 {
-                    int r = random.Next(0, 4);
-                    if (r == 0)
-                        action.EnqueueAbility(new[] { engineeringBay }, Abilities.RESEARCH_TERRANINFANTRYWEAPONS);
-                    if (r == 1)
-                        action.EnqueueAbility(new[] { engineeringBay }, Abilities.RESEARCH_TERRANINFANTRYARMOR);
-                    if (r == 2)
-                        action.EnqueueAbility(new[] { engineeringBay }, Abilities.RESEARCH_HISECAUTOTRACKING);
-                    if (r == 3)
-                        action.EnqueueAbility(new[] { engineeringBay }, Abilities.RESEARCH_TERRANSTRUCTUREARMORUPGRADE);
-                }
-            }
-            foreach (var armory in GetUnits(UnitType.TERRAN_ARMORY))
-            {
-                if (armory.orders.Count == 0)
-                {
-                    int r = random.Next(0, 3);
-                    if (r == 0)
-                        action.EnqueueAbility(new[] { armory }, Abilities.RESEARCH_TERRANSHIPWEAPONS);
-                    if (r == 1)
-                        action.EnqueueAbility(new[] { armory }, Abilities.RESEARCH_TERRANVEHICLEWEAPONS);
-                    if (r == 2)
-                        action.EnqueueAbility(new[] { armory }, Abilities.RESEARCH_TERRANVEHICLEANDSHIPPLATING);
-                }
-            }
-            if ((gameContext.frame & 16) != 0)
-            {
-                foreach (var archive in GetUnits(UnitType.PROTOSS_TEMPLARARCHIVE))
-                {
-                    if (archive.orders.Count == 0)
+                    if (researcher.orders.Count == 0)
                     {
-                        action.EnqueueAbility(new[] { archive }, Abilities.RESEARCH_PSISTORM);
-                    }
-                }
-                foreach (var lab in GetUnits(UnitType.TERRAN_BARRACKSTECHLAB))
-                {
-                    if (lab.orders.Count == 0)
-                    {
-                        int r = random.Next(0, 3);
-                        if (r == 0)
-                            action.EnqueueAbility(new[] { lab }, Abilities.RESEARCH_STIMPACK);
-                        if (r == 1)
-                            action.EnqueueAbility(new[] { lab }, Abilities.RESEARCH_COMBATSHIELD);
-                        if (r == 2)
-                            action.EnqueueAbility(new[] { lab }, Abilities.RESEARCH_CONCUSSIVESHELLS);
-                        //if (r == 0)
-                        //    action.EnqueueAbility(new[] { lab }, (Abilities)gameContext.gameData.Upgrades[(int)UpgradeType.STIMPACK].AbilityId);
-                        //if (r == 1)
-                        //    action.EnqueueAbility(new[] { lab }, (Abilities)gameContext.gameData.Upgrades[(int)UpgradeType.COMBATSHIELD].AbilityId);
-                        //if (r == 2)
-                        //    action.EnqueueAbility(new[] { lab }, (Abilities)gameContext.gameData.Upgrades[(int)UpgradeType.JACKHAMMERCONCUSSIONGRENADES].AbilityId);
-                    }
-                }
-                foreach (var lab in GetUnits(UnitType.TERRAN_FACTORYTECHLAB))
-                {
-                    if (lab.orders.Count == 0)
-                    {
-                        int r = random.Next(0, 3);
-                        if (r == 0)
-                            action.EnqueueAbility(new[] { lab }, Abilities.RESEARCH_DRILLINGCLAWS);
-                        if (r == 1)
-                            action.EnqueueAbility(new[] { lab }, Abilities.RESEARCH_INFERNALPREIGNITER);
-                        if (r == 2)
-                            action.EnqueueAbility(new[] { lab }, Abilities.RESEARCH_SMARTSERVOS);
+                        int r = random.Next(0, unitType.Abilities.Count);
+                        action.EnqueueAbility(new[] { researcher }, unitType.Abilities[r]);
                     }
                 }
             }
@@ -401,10 +271,10 @@ namespace MiningNachine
 
             foreach (var unit in army5)
             {
-                if (unit.engagedTargetTag != 0 && gameContext.units.TryGetValue(unit.engagedTargetTag, out var enemy))
+                if (unit.engagedTargetTag != 0 && gameContext.units.TryGetValue(unit.engagedTargetTag, out var enemy) && !UnitTypeInfo.Melee.Contains(unit.type))
                 {
                     if (enemiesArmy.Count > 2)
-                        action.EnqueueSmart(new[] { unit }, unit.position + Vector2.Normalize(unit.position - enemy.position) * 3);
+                        action.EnqueueSmart(new[] { unit }, unit.position + Vector2.Normalize(unit.position - enemy.position) * unit.weaponCooldown * gameContext.UnitData[(int)unit.type].MovementSpeed*0.5f);
                     else
                         action.EnqueueSmart(new[] { unit }, unit.position - Vector2.Normalize(unit.position - enemy.position) * 3);
                 }
@@ -446,6 +316,10 @@ namespace MiningNachine
                 action.EnqueueAttack(army4, attackPos);
             }
 
+            var commandCenterProjection = gameContext.GetUnitProjections(UnitTypeInfo.ResourceCenters);
+            bool EnoughWorker = commandCenters.All(u => { return u.assignedHarvesters >= u.idealHarvesters; }) && player.FoodWorkers > 20;
+            bool expand = player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 20 || EnoughWorker || player.MineralStat.current > 1000 || (cancelCount == 0 && commandCenterProjection.Count < 4);
+
             if (workers.Count > 0)
             {
                 if (raceData.Race == SC2APIProtocol.Race.Terran || raceData.Race == SC2APIProtocol.Race.Protoss)
@@ -484,7 +358,7 @@ namespace MiningNachine
                             }
                         }
                     }
-                if (((gameContext.frame & 8) > 0 && player.FoodWorkers >= 16) && player.VespeneStat.current < 800 && player.MineralStat.current > 500)
+                if (((gameContext.frame & 8) > 0 && player.FoodWorkers >= 16) && player.VespeneStat.current < 800 && (player.MineralStat.current > 500))
                     foreach (var geyser in geysersCanBuild)
                     {
                         if (gameContext.Afford(raceData.VespeneBuilding))
@@ -521,17 +395,14 @@ namespace MiningNachine
                     }
                 }
             }
-            bool EnoughWorker = commandCenters.All(u => { return u.assignedHarvesters >= u.idealHarvesters; });
-            bool expand = player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 20 || EnoughWorker || player.MineralStat.current > 1000 || (cancelCount == 0 && commandCenters.Length < 4);
-            //expand = true;
 
-            if (((cancelCount > 0) || commandCenters.Length > mineralGroup.middlePoints.Count / 2))
+            if (((cancelCount > 0) || commandCenterProjection.Count > mineralGroup.middlePoints.Count / 4 || player.SupplyConsume > 110))
                 foreach (TechUnit techUnit in raceData.TechUnits)
                 {
                     var spawners = GetUnits(techUnit.Spawner);
                     //var techUnits = GetUnits(techUnit.UnitType);
                     if (!gameContext.UnitCanBuild(techUnit.UnitType)) continue;
-                    if (!UnitTypeInfo.Workers.Contains(techUnit.Spawner) && player.MineralStat.current > 1000)
+                    if (!UnitTypeInfo.Workers.Contains(techUnit.Spawner) && (player.MineralStat.current > 1000 || player.SupplyConsume > 110))
                     {
                         foreach (var spawner in spawners)
                             if (spawner.orders.Count == 0 && player.SupplyConsume < 197 && player.MineralStat.current > 600)
@@ -555,14 +426,11 @@ namespace MiningNachine
                         }
                     }
                 }
-            var commandCenterProjection = gameContext.GetUnitProjections(UnitTypeInfo.ResourceCenters);
             if (expand)
             {
                 if (gameContext.Afford(raceData.SupplyBuilding))
                 {
                     Vector2 expandPoint = GetRandom(mineralGroup.middlePoints);
-
-                    var expandPoint1 = GetRandom(mineralGroup.middlePoints);
 
                     //bool _stop1 = false;
                     bool _stop1 = true;
@@ -579,7 +447,7 @@ namespace MiningNachine
 
                     foreach (var commandCenter in commandCenterProjection)
                     {
-                        var distance = Vector2.Distance(commandCenter.position, expandPoint1);
+                        var distance = Vector2.Distance(commandCenter.position, expandPoint);
                         if (distance < 1)
                         {
                             _stop1 = false;
@@ -610,12 +478,8 @@ namespace MiningNachine
             }
 
             var unitCaceled = playerUnits.Where(u => u.buildProgress < 1 && u.buildProgress * 0.25 > (float)u.health / u.healthMax).ToList();
-            if (unitCaceled.Count > 0)
-            {
-                cancelCount += unitCaceled.Count;
-                action.EnqueueAbility(unitCaceled, Abilities.CANCEL_BUILDINPROGRESS);
-
-            }
+            cancelCount += unitCaceled.Count;
+            action.EnqueueAbility(unitCaceled, Abilities.CANCEL_BUILDINPROGRESS);
 
             return action;
         }

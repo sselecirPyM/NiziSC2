@@ -18,8 +18,19 @@
       </Depends>
     </TechUnit>
     <TechUnit>
+      <UnitType>ZERG_EVOLUTIONCHAMBER</UnitType>
+      <Spawner>ZERG_DRONE</Spawner>
+    </TechUnit>
+    <TechUnit>
       <UnitType>ZERG_ZERGLING</UnitType>
       <Spawner>ZERG_LARVA</Spawner>
+      <Depends>
+        <UnitType>ZERG_SPAWNINGPOOL</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_QUEEN</UnitType>
+      <Spawner>ZERG_HATCHERY</Spawner>
       <Depends>
         <UnitType>ZERG_SPAWNINGPOOL</UnitType>
       </Depends>
@@ -29,6 +40,20 @@
       <Spawner>ZERG_LARVA</Spawner>
       <Depends>
         <UnitType>ZERG_ROACHWARREN</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_MUTALISK</UnitType>
+      <Spawner>ZERG_LARVA</Spawner>
+      <Depends>
+        <UnitType>ZERG_SPIRE</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_HYDRALISK</UnitType>
+      <Spawner>ZERG_LARVA</Spawner>
+      <Depends>
+        <UnitType>ZERG_HYDRALISKBURROWED</UnitType>
       </Depends>
     </TechUnit>
     <TechUnit>

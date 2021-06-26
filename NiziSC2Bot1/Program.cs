@@ -4,12 +4,13 @@ using System;
 using System.IO;
 using System.Xml.Serialization;
 
-namespace MiningNachine
+namespace NiziSC2Bot1
 {
     class Program
     {
         static void Main(string[] args)
         {
+            //CodeGen.Gen1();
             GameContext gameContext = new GameContext();
             if (args.Length == 0)
             {

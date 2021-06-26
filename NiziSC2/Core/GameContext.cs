@@ -16,13 +16,21 @@ namespace NiziSC2.Core
         public ResponseData gameData;
         public ResponseObservation observation;
 
+        public IReadOnlyList<SC2APIProtocol.UnitTypeData> UnitData { get => gameData.Units; }
+
         public Dictionary<int, PlayerProperties> players;
         public Dictionary<ulong, Unit> units = new Dictionary<ulong, Unit>();
         public Dictionary<ulong, Unit> unitLose = new Dictionary<ulong, Unit>();
         public Dictionary<uint, UnitType> buildId2Units = new Dictionary<uint, UnitType>();
         public Dictionary<uint, UpgradeType> upgradeCmd2Upgrade = new Dictionary<uint, UpgradeType>();
         public Dictionary<Race, RaceData> raceDatas;
+        public AutoCast AutoCast;
         public Dictionary<UnitType, TechUnit> type2Tech = new Dictionary<UnitType, TechUnit>();
+
+        public Dictionary<UnitType, int> unitVirtualCount = new Dictionary<UnitType, int>();
+        public Dictionary<UnitType, int> unitOnBuild = new Dictionary<UnitType, int>();
+
+
         public Race playerRace;
         public ulong frame = 0;
         public int playerId;
@@ -134,6 +142,9 @@ namespace NiziSC2.Core
                 type2Tech[u.UnitType] = u;
             foreach (var u in raceZerg.TechUnits)
                 type2Tech[u.UnitType] = u;
+
+            XmlSerializer xmlSerializer1 = new XmlSerializer(typeof(AutoCast));
+            AutoCast = (AutoCast)xmlSerializer1.Deserialize(File.OpenRead("Data/AutoCast.xml"));
         }
 
         public void FrameBegin()
@@ -177,6 +188,36 @@ namespace NiziSC2.Core
             playerUnits.Clear();
             anotherCache.Clear();
             unitProjections.Clear();
+            unitVirtualCount.Clear();
+            unitOnBuild.Clear();
+            void KeyIncrease(Dictionary<UnitType, int> _dict, UnitType _key)
+            {
+                if (_dict.ContainsKey(_key))
+                    _dict[_key]++;
+                else
+                    _dict[_key] = 1;
+            }
+            var playerUnits1 = GetUnits(Alliance.Self);
+            foreach (var unit in playerUnits1)
+            {
+                foreach (var order in unit.orders)
+                {
+                    if (buildId2Units.TryGetValue(order.AbilityId, out var buildUnitType))
+                    {
+                        KeyIncrease(unitVirtualCount, buildUnitType);
+                        KeyIncrease(unitOnBuild, buildUnitType);
+                    }
+                }
+
+                var unitData = gameData.Units[(int)unit.type];
+                foreach (var alias in unitData.TechAlias)
+                {
+                    KeyIncrease(unitVirtualCount, (UnitType)alias);
+                }
+                KeyIncrease(unitVirtualCount, unit.type);
+                KeyIncrease(unitVirtualCount, (UnitType)unitData.UnitAlias);
+
+            }
         }
         public void FrameEnd()
         {
@@ -228,6 +269,7 @@ namespace NiziSC2.Core
 
         public bool GetUnitEqualType(UnitType unitType, UnitType other)
         {
+            if (unitType == other) return true;
             foreach (var alias in gameData.Units[(int)unitType].TechAlias)
             {
                 if (other == (UnitType)alias)
@@ -252,7 +294,7 @@ namespace NiziSC2.Core
         {
             if (!playerUnits.TryGetValue(unitType, out var u1))
             {
-                u1 = GetUnits(Alliance.Self).Where(u => { return (u.type == unitType || GetUnitEqualType(u.type, unitType)) && u.buildProgress == 1; }).ToList();
+                u1 = GetUnits(Alliance.Self).Where(u => { return GetUnitEqualType(u.type, unitType) && u.buildProgress == 1; }).ToList();
                 playerUnits[unitType] = u1;
             }
             return u1;
@@ -290,7 +332,7 @@ namespace NiziSC2.Core
         public List<UnitProjection> GetUnitProjections(UnitType unitType)
         {
             List<UnitProjection> proj = new List<UnitProjection>();
-            proj.AddRange(GetUnits(Alliance.Self).Where(u => { return (u.type == unitType || GetUnitEqualType(u.type, unitType)); })
+            proj.AddRange(GetUnits(Alliance.Self).Where(u => { return GetUnitEqualType(u.type, unitType); })
                 .Select(u => { return new UnitProjection { position = u.position, Tag = u.Tag, unitType = u.type, }; }));
             foreach (var spawner in GetWorkers())
             {

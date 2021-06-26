@@ -123,11 +123,22 @@ namespace NiziSC2.Core
             UnitType.ZERG_HYDRALISK,
             UnitType.ZERG_INFESTOR,
             UnitType.ZERG_MUTALISK,
+            UnitType.ZERG_QUEEN,
             UnitType.ZERG_ROACH,
             UnitType.ZERG_SWARMHOSTMP,
             UnitType.ZERG_ULTRALISK,
             UnitType.ZERG_VIPER,
             UnitType.ZERG_ZERGLING,
+        };
+        public static HashSet<UnitType> Melee = new HashSet<UnitType>()
+        {
+            UnitType.PROTOSS_PROBE,
+            UnitType.PROTOSS_DARKTEMPLAR,
+            UnitType.PROTOSS_ZEALOT,
+            UnitType.TERRAN_SCV,
+            UnitType.ZERG_DRONE,
+            UnitType.ZERG_ZERGLING,
+            UnitType.ZERG_ULTRALISK,
         };
         public static HashSet<UnitType> NeedAddon = new HashSet<UnitType>()
         {
@@ -137,6 +148,22 @@ namespace NiziSC2.Core
             UnitType.TERRAN_FACTORYFLYING,
             UnitType.TERRAN_STARPORT,
             UnitType.TERRAN_STARPORTFLYING,
+        };
+        public static HashSet<UnitType> AllBarracks = new HashSet<UnitType>()
+        {
+            UnitType.TERRAN_BARRACKS,
+            UnitType.TERRAN_BARRACKSFLYING,
+            UnitType.TERRAN_FACTORY,
+            UnitType.TERRAN_FACTORYFLYING,
+            UnitType.TERRAN_STARPORT,
+            UnitType.TERRAN_STARPORTFLYING,
+            UnitType.PROTOSS_GATEWAY,
+            UnitType.PROTOSS_WARPGATE,
+            UnitType.PROTOSS_ROBOTICSBAY,
+            UnitType.PROTOSS_STARGATE,
+            UnitType.ZERG_HATCHERY,
+            UnitType.ZERG_LAIR,
+            UnitType.ZERG_HIVE,
         };
     }
 }

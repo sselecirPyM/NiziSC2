@@ -4,7 +4,7 @@
 using System.Linq;
 using SC2APIProtocol;
 
-namespace MiningNachine
+namespace MiningMachine
 {
     /* This class is used to load the CommandLine arguments for the bot.
      */

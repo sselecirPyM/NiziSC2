@@ -10,6 +10,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Data\AutoCast.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\RaceDataProtoss.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

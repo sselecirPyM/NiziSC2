@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Xml.Serialization;
 
-namespace MiningNachine
+namespace MiningMachine
 {
     class Program
     {
