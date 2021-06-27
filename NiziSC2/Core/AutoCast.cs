@@ -11,6 +11,7 @@ namespace NiziSC2.Core
     {
         [XmlElement("AutoResearches")]
         public List<AutoResearch> AutoResearches;
+        public List<UnitType> CasterTypes;
     }
     public class AutoResearch
     {

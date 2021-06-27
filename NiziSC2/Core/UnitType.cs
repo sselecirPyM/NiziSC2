@@ -223,6 +223,7 @@ namespace NiziSC2.Core
         PROTOSS_SHIELDBATTERY = 1910,
         TERRAN_REFINERY_RICH = 1943,
         PROTOSS_ASSIMILATOR_RICH = 1994,
+        ZERG_EXTRACTOR_RICH = 1995,
         NEUTRAL_MineralField450 = 1996,
 
     }

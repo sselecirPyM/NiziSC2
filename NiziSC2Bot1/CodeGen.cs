@@ -21,10 +21,15 @@ namespace NiziSC2Bot1
             //    if (enum1.Contains("MORPH_"))
             //        Console.WriteLine("            Abilities.{0},", enum1);
             //}
-            foreach (var enum1 in Enum.GetNames(typeof(Abilities)))
+            //foreach (var enum1 in Enum.GetNames(typeof(Abilities)))
+            //{
+            //    if (enum1.Contains("BUILD_"))
+            //        Console.WriteLine("            Abilities.{0},", enum1);
+            //}
+            foreach (var enum1 in Enum.GetNames(typeof(UnitType)))
             {
-                if (enum1.Contains("BUILD_"))
-                    Console.WriteLine("            Abilities.{0},", enum1);
+                if (enum1.Contains("TERRAN_"))
+                    Console.WriteLine("            UnitType.{0},", enum1);
             }
         }
     }

@@ -271,10 +271,10 @@ namespace MiningMachine
 
             foreach (var unit in army5)
             {
-                if (unit.engagedTargetTag != 0 && gameContext.units.TryGetValue(unit.engagedTargetTag, out var enemy) && !UnitTypeInfo.Melee.Contains(unit.type))
+                if (unit.engagedTargetTag != 0 && gameContext.units.TryGetValue(unit.engagedTargetTag, out var enemy) && !UnitTypeInfo.Melee.Contains(unit.type) && !UnitTypeInfo.Thor.Contains(unit.type))
                 {
                     if (enemiesArmy.Count > 2)
-                        action.EnqueueSmart(new[] { unit }, unit.position + Vector2.Normalize(unit.position - enemy.position) * unit.weaponCooldown * gameContext.UnitData[(int)unit.type].MovementSpeed*0.5f);
+                        action.EnqueueSmart(new[] { unit }, unit.position + Vector2.Normalize(unit.position - enemy.position) * unit.weaponCooldown * gameContext.UnitData[(int)unit.type].MovementSpeed * 0.5f);
                     else
                         action.EnqueueSmart(new[] { unit }, unit.position - Vector2.Normalize(unit.position - enemy.position) * 3);
                 }
@@ -317,8 +317,9 @@ namespace MiningMachine
             }
 
             var commandCenterProjection = gameContext.GetUnitProjections(UnitTypeInfo.ResourceCenters);
-            bool EnoughWorker = commandCenters.All(u => { return u.assignedHarvesters >= u.idealHarvesters; }) && player.FoodWorkers > 20;
-            bool expand = player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 20 || EnoughWorker || player.MineralStat.current > 1000 || (cancelCount == 0 && commandCenterProjection.Count < 4);
+            gameContext.unitOnBuild.TryGetValue(raceData.ResourceBuilding, out int onbuildCommandCenterCount);
+            bool EnoughWorker = commandCenters.All(u => { return u.assignedHarvesters >= u.idealHarvesters; }) && player.FoodWorkers > 20 && onbuildCommandCenterCount == 0;
+            bool expand = player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 20 || EnoughWorker || player.MineralStat.current > 1000 || (cancelCount == 0 && commandCenterProjection.Count < 5);
 
             if (workers.Count > 0)
             {
@@ -344,20 +345,6 @@ namespace MiningMachine
                         }
                     }
                 }
-                if (cancelCount > 0 || player.MineralStat.current > 2000)
-                    foreach (var barrack1 in raceData.Barracks)
-                    {
-                        if (barrack1.UnitType != raceData.ResourceBuilding && GetUnitVirtualCount(barrack1.UnitType) < player.SupplyProvide / 18)
-                        {
-                            if (gameContext.Afford(barrack1.UnitType))
-                            {
-                                var unit = GetRandom(workers);
-                                Vector2 pos = RandomPosition(unit.position, 10);
-                                if (nonResPlacementGrid.Query((int)pos.X, (int)pos.Y))
-                                    action.EnqueueBuild(unit.Tag, barrack1.UnitType, pos);
-                            }
-                        }
-                    }
                 if (((gameContext.frame & 8) > 0 && player.FoodWorkers >= 16) && player.VespeneStat.current < 800 && (player.MineralStat.current > 500))
                     foreach (var geyser in geysersCanBuild)
                     {
@@ -396,7 +383,7 @@ namespace MiningMachine
                 }
             }
 
-            if (((cancelCount > 0) || commandCenterProjection.Count > mineralGroup.middlePoints.Count / 4 || player.SupplyConsume > 110))
+            if (((cancelCount > 0) || commandCenterProjection.Count >= mineralGroup.middlePoints.Count / 4 || player.SupplyConsume > 110))
                 foreach (TechUnit techUnit in raceData.TechUnits)
                 {
                     var spawners = GetUnits(techUnit.Spawner);
@@ -405,7 +392,7 @@ namespace MiningMachine
                     if (!UnitTypeInfo.Workers.Contains(techUnit.Spawner) && (player.MineralStat.current > 1000 || player.SupplyConsume > 110))
                     {
                         foreach (var spawner in spawners)
-                            if (spawner.orders.Count == 0 && player.SupplyConsume < 197 && player.MineralStat.current > 600)
+                            if (spawner.orders.Count == 0 && player.SupplyConsume < 194 && player.MineralStat.current > 600)
                             {
                                 if (random.NextDouble() < 0.1)
                                     TryTrain(spawner, techUnit.UnitType, action);
@@ -413,9 +400,9 @@ namespace MiningMachine
                     }
                     else
                     {
-                        if (workers.Count > 0 && player.MineralStat.current > 500)
+                        if (spawners.Count > 0 && player.MineralStat.current > 500)
                         {
-                            var spawner = GetRandom(workers);
+                            var spawner = GetRandom(spawners);
 
                             if (GetUnitVirtualCount(techUnit.UnitType) < 2)
                             {
@@ -426,6 +413,24 @@ namespace MiningMachine
                         }
                     }
                 }
+
+            if (workers.Count > 0)
+            {
+                if (cancelCount > 0 || player.MineralStat.current > 1000)
+                    foreach (var barrack1 in raceData.Barracks)
+                    {
+                        if (barrack1.UnitType != raceData.ResourceBuilding && GetUnitVirtualCount(barrack1.UnitType) < player.SupplyProvide / 18)
+                        {
+                            if (gameContext.Afford(barrack1.UnitType))
+                            {
+                                var unit = GetRandom(workers);
+                                Vector2 pos = RandomPosition(unit.position, 10);
+                                if (nonResPlacementGrid.Query((int)pos.X, (int)pos.Y))
+                                    action.EnqueueBuild(unit.Tag, barrack1.UnitType, pos);
+                            }
+                        }
+                    }
+            }
             if (expand)
             {
                 if (gameContext.Afford(raceData.SupplyBuilding))
@@ -467,7 +472,7 @@ namespace MiningMachine
                     }
                 }
             }
-            if (!EnoughWorker && (player.FoodWorkers < 120 || (player.FoodWorkers < 150 && player.SupplyConsume < 150)))
+            if (!EnoughWorker && (player.FoodWorkers < 100 || (player.FoodWorkers < 140 && player.SupplyConsume < 140)))
             {
                 var larvas = GetUnits(raceData.Worker.Spawner);
                 if (larvas.Count > 0)

@@ -22,6 +22,34 @@
       <Spawner>ZERG_DRONE</Spawner>
     </TechUnit>
     <TechUnit>
+      <UnitType>ZERG_HYDRALISKDEN</UnitType>
+      <Spawner>ZERG_DRONE</Spawner>
+      <Depends>
+        <UnitType>ZERG_LAIR</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_SPIRE</UnitType>
+      <Spawner>ZERG_DRONE</Spawner>
+      <Depends>
+        <UnitType>ZERG_LAIR</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_INFESTATIONPIT</UnitType>
+      <Spawner>ZERG_DRONE</Spawner>
+      <Depends>
+        <UnitType>ZERG_LAIR</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_ULTRALISKCAVERN</UnitType>
+      <Spawner>ZERG_DRONE</Spawner>
+      <Depends>
+        <UnitType>ZERG_HIVE</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
       <UnitType>ZERG_ZERGLING</UnitType>
       <Spawner>ZERG_LARVA</Spawner>
       <Depends>
@@ -53,7 +81,35 @@
       <UnitType>ZERG_HYDRALISK</UnitType>
       <Spawner>ZERG_LARVA</Spawner>
       <Depends>
-        <UnitType>ZERG_HYDRALISKBURROWED</UnitType>
+        <UnitType>ZERG_HYDRALISKDEN</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_INFESTOR</UnitType>
+      <Spawner>ZERG_LARVA</Spawner>
+      <Depends>
+        <UnitType>ZERG_INFESTATIONPIT</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_MUTALISK</UnitType>
+      <Spawner>ZERG_LARVA</Spawner>
+      <Depends>
+        <UnitType>ZERG_SPIRE</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_CORRUPTOR</UnitType>
+      <Spawner>ZERG_LARVA</Spawner>
+      <Depends>
+        <UnitType>ZERG_SPIRE</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
+      <UnitType>ZERG_ULTRALISK</UnitType>
+      <Spawner>ZERG_LARVA</Spawner>
+      <Depends>
+        <UnitType>ZERG_ULTRALISKCAVERN</UnitType>
       </Depends>
     </TechUnit>
     <TechUnit>

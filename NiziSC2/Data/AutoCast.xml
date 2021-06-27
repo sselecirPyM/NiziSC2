@@ -39,6 +39,22 @@
     </Abilities>
   </AutoResearches>
   <AutoResearches>
+    <Unit>PROTOSS_CYBERNETICSCORE</Unit>
+    <Abilities>
+      <Abilities>RESEARCH_WARPGATE</Abilities>
+      <Abilities>RESEARCH_PROTOSSAIRWEAPONS</Abilities>
+      <Abilities>RESEARCH_PROTOSSAIRARMOR</Abilities>
+    </Abilities>
+  </AutoResearches>
+  <AutoResearches>
+    <Unit>PROTOSS_FORGE</Unit>
+    <Abilities>
+      <Abilities>RESEARCH_PROTOSSGROUNDWEAPONS</Abilities>
+      <Abilities>RESEARCH_PROTOSSGROUNDARMOR</Abilities>
+      <Abilities>RESEARCH_PROTOSSSHIELDS</Abilities>
+    </Abilities>
+  </AutoResearches>
+  <AutoResearches>
     <Unit>TERRAN_BARRACKSTECHLAB</Unit>
     <Abilities>
       <Abilities>RESEARCH_STIMPACK</Abilities>
@@ -65,7 +81,44 @@
   <AutoResearches>
     <Unit>ZERG_ROACHWARREN</Unit>
     <Abilities>
+      <Abilities>RESEARCH_GLIALREGENERATION</Abilities>
+      <Abilities>RESEARCH_TUNNELINGCLAWS</Abilities>
+    </Abilities>
+  </AutoResearches>
+  <AutoResearches>
+    <Unit>ZERG_ULTRALISKCAVERN</Unit>
+    <Abilities>
       <Abilities>RESEARCH_ANABOLICSYNTHESIS</Abilities>
+      <Abilities>RESEARCH_CHITINOUSPLATING</Abilities>
+    </Abilities>
+  </AutoResearches>
+  <AutoResearches>
+    <Unit>ZERG_HYDRALISKDEN</Unit>
+    <Abilities>
+      <Abilities>RESEARCH_GROOVEDSPINES</Abilities>
+      <Abilities>RESEARCH_MUSCULARAUGMENTS</Abilities>
+    </Abilities>
+  </AutoResearches>
+  <AutoResearches>
+    <Unit>ZERG_INFESTATIONPIT</Unit>
+    <Abilities>
+      <Abilities>RESEARCH_PATHOGENGLANDS</Abilities>
+      <Abilities>RESEARCH_NEURALPARASITE</Abilities>
+    </Abilities>
+  </AutoResearches>
+  <AutoResearches>
+    <Unit>TERRAN_FUSIONCORE</Unit>
+    <Abilities>
+      <Abilities>RESEARCH_BATTLECRUISERWEAPONREFIT</Abilities>
+      <Abilities>RESEARCH_RAPIDREIGNITIONSYSTEM</Abilities>
+      <Abilities>RESEARCH_BALLISTICRANGE</Abilities>
+    </Abilities>
+  </AutoResearches>
+  <AutoResearches>
+    <Unit>TERRAN_GHOSTACADEMY</Unit>
+    <Abilities>
+      <Abilities>RESEARCH_PERSONALCLOAKING</Abilities>
+      <Abilities>RESEARCH_ENHANCEDSHOCKWAVES</Abilities>
     </Abilities>
   </AutoResearches>
 </AutoCast>

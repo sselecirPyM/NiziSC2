@@ -208,7 +208,10 @@ namespace NiziSC2.Core
                         KeyIncrease(unitOnBuild, buildUnitType);
                     }
                 }
-
+                if (unit.buildProgress < 1 && !UnitTypeInfo.Terran.Contains(unit.type))
+                {
+                    KeyIncrease(unitOnBuild, unit.type);
+                }
                 var unitData = gameData.Units[(int)unit.type];
                 foreach (var alias in unitData.TechAlias)
                 {

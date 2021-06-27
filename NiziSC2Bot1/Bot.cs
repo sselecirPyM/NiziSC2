@@ -233,6 +233,11 @@ namespace NiziSC2Bot1
                     action.EnqueueAbility(new[] { randomUnit }, Abilities.EFFECT_EMP, randomEnemy.position);
                     army.Remove(randomUnit);
                 }
+                if (randomUnit.type == UnitType.ZERG_INFESTOR && Vector2.Distance(randomUnit.position, randomEnemy.position) < 8)
+                {
+                    action.EnqueueAbility(new[] { randomUnit }, Abilities.EFFECT_FUNGALGROWTH, randomEnemy.position);
+                    army.Remove(randomUnit);
+                }
                 if (randomUnit.type == UnitType.PROTOSS_HIGHTEMPLAR && Vector2.Distance(randomUnit.position, randomEnemy.position) < 8)
                 {
                     action.EnqueueAbility(new[] { randomUnit }, Abilities.EFFECT_PSISTORM, randomEnemy.position);
@@ -244,6 +249,23 @@ namespace NiziSC2Bot1
                     army.Remove(randomUnit);
                 }
             }
+            var queens = GetUnits(UnitType.ZERG_QUEEN);
+            if (queens.Count > 0 && commandCenters.Length > 0)
+                foreach (var randomUnit in queens)
+                {
+                    var randomCommandCenter = GetRandom(commandCenters);
+                    var randomFriendly = GetRandom(playerUnits);
+                    if (randomUnit.type == UnitType.ZERG_QUEEN && Vector2.Distance(randomUnit.position, randomCommandCenter.position) < 5 && randomUnit.energy > 25)
+                    {
+                        action.EnqueueAbility(new[] { randomUnit }, Abilities.EFFECT_INJECTLARVA, randomCommandCenter.Tag);
+                        army.Remove(randomUnit);
+                    }
+                    if (randomUnit.type == UnitType.ZERG_QUEEN && Vector2.Distance(randomUnit.position, randomFriendly.position) < 5 && randomUnit.energy > 50 && randomFriendly.health < randomFriendly.healthMax - 60)
+                    {
+                        action.EnqueueAbility(new[] { randomUnit }, Abilities.EFFECT_TRANSFUSION, randomFriendly.Tag);
+                        army.Remove(randomUnit);
+                    }
+                }
 
             var pos1 = scaledVisMap.GetPos(scaledVisMap.GetLow(out _));
             Vector2 attackPos = pos1 * new Vector2(visibility.Size.X, visibility.Size.Y);
@@ -255,10 +277,10 @@ namespace NiziSC2Bot1
 
             foreach (var unit in army5)
             {
-                if (unit.engagedTargetTag != 0 && gameContext.units.TryGetValue(unit.engagedTargetTag, out var enemy) && !UnitTypeInfo.Melee.Contains(unit.type))
+                if (unit.engagedTargetTag != 0 && gameContext.units.TryGetValue(unit.engagedTargetTag, out var enemy) && !UnitTypeInfo.Melee.Contains(unit.type) && !UnitTypeInfo.Thor.Contains(unit.type))
                 {
                     if (enemiesArmy.Count > 2)
-                        action.EnqueueSmart(new[] { unit }, unit.position + Vector2.Normalize(unit.position - enemy.position) * unit.weaponCooldown * gameContext.UnitData[(int)unit.type].MovementSpeed*0.5f);
+                        action.EnqueueSmart(new[] { unit }, unit.position + Vector2.Normalize(unit.position - enemy.position) * unit.weaponCooldown * gameContext.UnitData[(int)unit.type].MovementSpeed * 0.5f);
                     else
                         action.EnqueueSmart(new[] { unit }, unit.position - Vector2.Normalize(unit.position - enemy.position) * 3);
                 }
@@ -324,20 +346,6 @@ namespace NiziSC2Bot1
                         }
                     }
                 }
-                if (player.MineralStat.current > 2000)
-                    foreach (var barrack1 in raceData.Barracks)
-                    {
-                        if (GetUnitVirtualCount(barrack1.UnitType) < player.SupplyProvide / 18)
-                        {
-                            if (gameContext.Afford(barrack1.UnitType))
-                            {
-                                var unit = GetRandom(workers);
-                                Vector2 pos = RandomPosition(unit.position, 10);
-                                if (nonResPlacementGrid.Query((int)pos.X, (int)pos.Y))
-                                    action.EnqueueBuild(unit.Tag, barrack1.UnitType, pos);
-                            }
-                        }
-                    }
                 if (((gameContext.frame & 8) > 0 && player.FoodWorkers >= 16) && player.VespeneStat.current < 800 && player.MineralStat.current > 500)
                     foreach (var geyser in geysersCanBuild)
                     {
@@ -376,19 +384,43 @@ namespace NiziSC2Bot1
                 }
             }
             var commandCenterProjection = gameContext.GetUnitProjections(UnitTypeInfo.ResourceCenters);
-            bool EnoughWorker = commandCenters.All(u => { return u.assignedHarvesters >= u.idealHarvesters; });
-            bool expand = player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 30 || EnoughWorker || player.MineralStat.current > 1200 || commandCenterProjection.Count < 1;
+            gameContext.unitOnBuild.TryGetValue(raceData.ResourceBuilding, out int onbuildCommandCenterCount);
+            bool EnoughWorker = commandCenters.All(u => { return u.assignedHarvesters >= u.idealHarvesters; }) && player.FoodWorkers > 20 && onbuildCommandCenterCount == 0;
+            bool expand = player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 30 || EnoughWorker || player.MineralStat.current > 1200 || commandCenterProjection.Count < 2 || resourceCommandCenter.Length < 1;
+            var lairs = GetUnits(UnitType.ZERG_LAIR);
+            var hives = GetUnits(UnitType.ZERG_HIVE);
+            if (hives.Count == 0)
+            {
+                if (lairs.Count == 0)
+                    foreach (var base1 in commandCenters)
+                    {
+                        if (base1.type == UnitType.ZERG_HATCHERY)
+                        {
+                            action.EnqueueAbility(new[] { base1 }, Abilities.MORPH_LAIR);
+                            break;
+                        }
+                    }
+                else
+                    foreach (var base1 in commandCenters)
+                    {
+                        if (base1.type == UnitType.ZERG_LAIR)
+                        {
+                            action.EnqueueAbility(new[] { base1 }, Abilities.MORPH_HIVE);
+                            break;
+                        }
+                    }
+            }
 
-            if (commandCenterProjection.Count > mineralGroup.middlePoints.Count / 4 || player.SupplyConsume > 110)
+            if (commandCenterProjection.Count > mineralGroup.middlePoints.Count / 4 || player.FoodWorkers > 50 || player.MineralStat.current > 600)
                 foreach (TechUnit techUnit in raceData.TechUnits)
                 {
                     var spawners = GetUnits(techUnit.Spawner);
                     //var techUnits = GetUnits(techUnit.UnitType);
                     if (!gameContext.UnitCanBuild(techUnit.UnitType)) continue;
-                    if (!UnitTypeInfo.Workers.Contains(techUnit.Spawner) && player.SupplyConsume > 100)
+                    if (!UnitTypeInfo.Workers.Contains(techUnit.Spawner) && player.FoodWorkers > 50)
                     {
                         foreach (var spawner in spawners)
-                            if (spawner.orders.Count == 0 && player.SupplyConsume < 197 && player.MineralStat.current > 600)
+                            if (spawner.orders.Count == 0 && player.SupplyConsume < 194 && player.MineralStat.current > 600)
                             {
                                 if (random.NextDouble() < 0.1)
                                     TryTrain(spawner, techUnit.UnitType, action);
@@ -396,9 +428,9 @@ namespace NiziSC2Bot1
                     }
                     else
                     {
-                        if (workers.Count > 0 && player.MineralStat.current > 500)
+                        if (spawners.Count > 0 && player.MineralStat.current > 500 && random.NextDouble() < 0.1f)
                         {
-                            var spawner = GetRandom(workers);
+                            var spawner = GetRandom(spawners);
 
                             if (GetUnitVirtualCount(techUnit.UnitType) < 2)
                             {
@@ -409,6 +441,24 @@ namespace NiziSC2Bot1
                         }
                     }
                 }
+
+            if (workers.Count > 0)
+            {
+                if (player.MineralStat.current > 1000)
+                    foreach (var barrack1 in raceData.Barracks)
+                    {
+                        if (GetUnitVirtualCount(barrack1.UnitType) < player.SupplyProvide / 18)
+                        {
+                            if (gameContext.Afford(barrack1.UnitType))
+                            {
+                                var unit = GetRandom(workers);
+                                Vector2 pos = RandomPosition(unit.position, 10);
+                                if (nonResPlacementGrid.Query((int)pos.X, (int)pos.Y))
+                                    action.EnqueueBuild(unit.Tag, barrack1.UnitType, pos);
+                            }
+                        }
+                    }
+            }
             if (expand)
             {
                 if (gameContext.Afford(raceData.SupplyBuilding))
@@ -440,7 +490,7 @@ namespace NiziSC2Bot1
                     }
                 }
             }
-            if (!EnoughWorker && (player.FoodWorkers < 80 || (player.FoodWorkers < 100 && player.SupplyConsume < 100)))
+            if (!EnoughWorker && (player.FoodWorkers < 70 || (player.FoodWorkers < 85 && player.SupplyConsume < 85)))
             {
                 var larvas = GetUnits(raceData.Worker.Spawner);
                 if (larvas.Count > 0)
