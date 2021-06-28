@@ -523,7 +523,15 @@ namespace NiziSC2Bot1
         {
             return units.Where(u => Vector2.Distance(u.position, position) < range && unitTypes.Contains(u.type)).ToList();
         }
+        public List<UnitProjection> GetNearbyUnit(IEnumerable<UnitProjection> units, Vector2 position, float range, HashSet<UnitType> unitTypes)
+        {
+            return units.Where(u => Vector2.Distance(u.position, position) < range && unitTypes.Contains(u.unitType)).ToList();
+        }
         public List<Unit> GetNearbyUnit(IEnumerable<Unit> units, Vector2 position, float range)
+        {
+            return units.Where(u => Vector2.Distance(u.position, position) < range).ToList();
+        }
+        public List<UnitProjection> GetNearbyUnit(IEnumerable<UnitProjection> units, Vector2 position, float range)
         {
             return units.Where(u => Vector2.Distance(u.position, position) < range).ToList();
         }

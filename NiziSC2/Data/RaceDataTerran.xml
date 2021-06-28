@@ -25,6 +25,13 @@
       </Depends>
     </TechUnit>
     <TechUnit>
+      <UnitType>TERRAN_MISSILETURRET</UnitType>
+      <Spawner>TERRAN_SCV</Spawner>
+      <Depends>
+        <UnitType>TERRAN_ENGINEERINGBAY</UnitType>
+      </Depends>
+    </TechUnit>
+    <TechUnit>
       <UnitType>TERRAN_ARMORY</UnitType>
       <Spawner>TERRAN_SCV</Spawner>
       <Depends>
@@ -143,4 +150,6 @@
   <VespeneBuilding>TERRAN_REFINERY</VespeneBuilding>
   <SupplyBuilding>TERRAN_SUPPLYDEPOT</SupplyBuilding>
   <Detector>TERRAN_RAVEN</Detector>
+  <DefenseAir>TERRAN_MISSILETURRET</DefenseAir>
+  <DefenseGround>TERRAN_BUNKER</DefenseGround>
 </RaceData>

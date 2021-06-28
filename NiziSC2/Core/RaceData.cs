@@ -19,5 +19,7 @@ namespace NiziSC2.Core
         public UnitType ResourceBuilding;
         public UnitType VespeneBuilding;
         public UnitType SupplyBuilding;
+        public UnitType DefenseGround;
+        public UnitType DefenseAir;
     }
 }

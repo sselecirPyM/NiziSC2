@@ -26,7 +26,7 @@ namespace MiningMachine
             placementGrid = new WriteableImageData(gameContext.gameInfo.StartRaw.PlacementGrid);
             nonResPlacementGrid = new WriteableImageData(gameContext.gameInfo.StartRaw.PlacementGrid);
 
-            scaledVisMap.Init(new Int2(24, 24));
+            scaledVisMap.Init(new Int2(32, 32));
 
             var minerals = gameContext.GetMinerals();
             var vespenes = gameContext.GetVespeneGeysers();
@@ -57,6 +57,8 @@ namespace MiningMachine
         }
         public ActionList Work()
         {
+            var watch1 = System.Diagnostics.Stopwatch.StartNew();
+
             var player = gameContext.players[gameContext.playerId];
             ActionList action = new ActionList();
             action.gameContext = gameContext;
@@ -68,7 +70,7 @@ namespace MiningMachine
             var enemiesArmy = enemies.Where(u => UnitTypeInfo.Army.Contains(u.type)).ToList();
             var enemiesArmyFood = enemiesArmy.Sum(u => gameContext.gameData.Units[(int)u.type].FoodRequired);
 
-            var commandCenters = playerUnits.Where(u => { return UnitTypeInfo.ResourceCenters.Contains(u.type); }).ToArray();
+            var commandCenters = gameContext.commandCenters;
             var raceData = gameContext.raceDatas[player.race];
             var resourceCommandCenter = commandCenters.Where(u =>
             {
@@ -142,6 +144,9 @@ namespace MiningMachine
                 gameContext.unitVirtualCount.TryGetValue(_unitType, out int value);
                 return value;
             }
+            watch1.Stop();
+            long tick1 = watch1.ElapsedTicks;
+            watch1.Restart();
             int workerTest1 = 0;
             foreach (var unit1 in workers)
             {
@@ -217,6 +222,10 @@ namespace MiningMachine
             }
             List<uint> debugIds = new List<uint>(gameContext.observation.Observation.RawData.Player.UpgradeIds);
 
+            watch1.Stop();
+            long tick2 = watch1.ElapsedTicks;
+            watch1.Restart();
+
             foreach (var p in scaledVisMap.EachPoint1())
             {
                 Vector2 p1 = scaledVisMap.GetPos(p);
@@ -265,9 +274,9 @@ namespace MiningMachine
                 action.EnqueueAbility(widowMines.Where(u => u.type == UnitType.TERRAN_WIDOWMINEBURROWED), Abilities.BURROWUP_WIDOWMINE);
 
             if (foodArmyReal < 70)
-                action.EnqueueAbility(gameContext.GetPlayerUnits(UnitType.TERRAN_SIEGETANK), Abilities.MORPH_SIEGEMODE);
+                action.EnqueueAbility(GetUnits(UnitType.TERRAN_SIEGETANK), Abilities.MORPH_SIEGEMODE);
             else
-                action.EnqueueAbility(gameContext.GetPlayerUnits(UnitType.TERRAN_SIEGETANKSIEGED), Abilities.MORPH_UNSIEGE);
+                action.EnqueueAbility(GetUnits(UnitType.TERRAN_SIEGETANKSIEGED), Abilities.MORPH_UNSIEGE);
 
             foreach (var unit in army5)
             {
@@ -321,16 +330,20 @@ namespace MiningMachine
             bool EnoughWorker = commandCenters.All(u => { return u.assignedHarvesters >= u.idealHarvesters; }) && player.FoodWorkers > 20 && onbuildCommandCenterCount == 0;
             bool expand = player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 20 || EnoughWorker || player.MineralStat.current > 1000 || (cancelCount == 0 && commandCenterProjection.Count < 5);
 
+            watch1.Stop();
+            long tick3 = watch1.ElapsedTicks;
+            watch1.Restart();
+
             if (workers.Count > 0)
             {
                 if (raceData.Race == SC2APIProtocol.Race.Terran || raceData.Race == SC2APIProtocol.Race.Protoss)
                 {
                     if (player.SupplyProvideVirtual - player.SupplyConsume < 4 + player.SupplyConsume * 0.3f && gameContext.Afford(raceData.SupplyBuilding))
                     {
-                        var unit = GetRandom(workers);
-                        Vector2 pos = RandomPosition(unit.position, 10);
+                        var spawner = GetRandom(workers);
+                        Vector2 pos = RandomPosition(spawner.position, 10);
                         if (nonResPlacementGrid.Query((int)pos.X, (int)pos.Y))
-                            action.EnqueueBuild(unit.Tag, raceData.SupplyBuilding, pos);
+                            action.EnqueueBuild(spawner.Tag, raceData.SupplyBuilding, pos);
                     }
                 }
                 else
@@ -381,6 +394,21 @@ namespace MiningMachine
                         }
                     }
                 }
+                if (gameContext.UnitCanBuild(raceData.DefenseAir))
+                    foreach (var commandCenter in commandCenterProjection)
+                    {
+                        if (player.MineralStat.current < 300) break;
+                        var nearbyDefense = GetNearbyUnit(gameContext.GetUnitProjections(raceData.DefenseAir), commandCenter.position, 7);
+                        var nearbyWorkers = GetNearbyUnit(workers, commandCenter.position, 6);
+                        if (nearbyDefense.Count < 1 && nearbyWorkers.Count > 0)
+                        {
+                            var spawner = GetRandom(nearbyWorkers);
+
+                            Vector2 pos = RandomPosition(spawner.position, 8);
+                            if (nonResPlacementGrid.Query((int)pos.X, (int)pos.Y) && gameContext.Afford(raceData.DefenseAir))
+                                action.EnqueueBuild(spawner.Tag, raceData.DefenseAir, pos);
+                        }
+                    }
             }
 
             if (((cancelCount > 0) || commandCenterProjection.Count >= mineralGroup.middlePoints.Count / 4 || player.SupplyConsume > 110))
@@ -486,6 +514,11 @@ namespace MiningMachine
             cancelCount += unitCaceled.Count;
             action.EnqueueAbility(unitCaceled, Abilities.CANCEL_BUILDINPROGRESS);
 
+            watch1.Stop();
+            long tick4 = watch1.ElapsedTicks;
+            if (playerUnits.Count == 100)
+                Console.WriteLine("cost: {0} {1} {2} {3}", tick1, tick2, tick3, tick4);
+
             return action;
         }
 
@@ -507,7 +540,15 @@ namespace MiningMachine
         {
             return units.Where(u => Vector2.Distance(u.position, position) < range && unitTypes.Contains(u.type)).ToList();
         }
+        public List<UnitProjection> GetNearbyUnit(IEnumerable<UnitProjection> units, Vector2 position, float range, HashSet<UnitType> unitTypes)
+        {
+            return units.Where(u => Vector2.Distance(u.position, position) < range && unitTypes.Contains(u.unitType)).ToList();
+        }
         public List<Unit> GetNearbyUnit(IEnumerable<Unit> units, Vector2 position, float range)
+        {
+            return units.Where(u => Vector2.Distance(u.position, position) < range).ToList();
+        }
+        public List<UnitProjection> GetNearbyUnit(IEnumerable<UnitProjection> units, Vector2 position, float range)
         {
             return units.Where(u => Vector2.Distance(u.position, position) < range).ToList();
         }

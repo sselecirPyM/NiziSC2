@@ -30,6 +30,9 @@ namespace NiziSC2.Core
         public Dictionary<UnitType, int> unitVirtualCount = new Dictionary<UnitType, int>();
         public Dictionary<UnitType, int> unitOnBuild = new Dictionary<UnitType, int>();
 
+        public List<Unit> visEnemyBases = new List<Unit>();
+        public List<System.Numerics.Vector2> enemyBases = new List<System.Numerics.Vector2>();
+        public List<Unit> commandCenters;
 
         public Race playerRace;
         public ulong frame = 0;
@@ -185,7 +188,7 @@ namespace NiziSC2.Core
             player.FromPlayerCommon(observation.Observation.PlayerCommon);
 
             cache1.Clear();
-            playerUnits.Clear();
+            playerTypeUnits.Clear();
             anotherCache.Clear();
             unitProjections.Clear();
             unitVirtualCount.Clear();
@@ -219,8 +222,9 @@ namespace NiziSC2.Core
                 }
                 KeyIncrease(unitVirtualCount, unit.type);
                 KeyIncrease(unitVirtualCount, (UnitType)unitData.UnitAlias);
-
             }
+            var playerUnits = GetUnits(Alliance.Self);
+            commandCenters = playerUnits.Where(u => { return UnitTypeInfo.ResourceCenters.Contains(u.type); }).ToList();
         }
         public void FrameEnd()
         {
@@ -281,7 +285,7 @@ namespace NiziSC2.Core
             return false;
         }
         Dictionary<SC2APIProtocol.Alliance, List<Unit>> cache1 = new Dictionary<Alliance, List<Unit>>();
-        Dictionary<UnitType, List<Unit>> playerUnits = new Dictionary<UnitType, List<Unit>>();
+        Dictionary<UnitType, List<Unit>> playerTypeUnits = new Dictionary<UnitType, List<Unit>>();
         Dictionary<string, List<Unit>> anotherCache = new Dictionary<string, List<Unit>>();
         Dictionary<UnitType, List<UnitProjection>> unitProjections = new Dictionary<UnitType, List<UnitProjection>>();
         public List<Unit> GetUnits(SC2APIProtocol.Alliance alliance)
@@ -295,10 +299,10 @@ namespace NiziSC2.Core
         }
         public List<Unit> GetPlayerUnits(UnitType unitType)
         {
-            if (!playerUnits.TryGetValue(unitType, out var u1))
+            if (!playerTypeUnits.TryGetValue(unitType, out var u1))
             {
                 u1 = GetUnits(Alliance.Self).Where(u => { return GetUnitEqualType(u.type, unitType) && u.buildProgress == 1; }).ToList();
-                playerUnits[unitType] = u1;
+                playerTypeUnits[unitType] = u1;
             }
             return u1;
         }
@@ -389,23 +393,37 @@ namespace NiziSC2.Core
                 .Select(u => { return new UnitProjection { position = u.position, Tag = u.Tag, unitType = u.type, }; }));
             proj.AddRange(GetUnits(Alliance.Enemy).Where(u => { return UnitTypeInfo.Refinery.Contains(u.type); })
                 .Select(u => { return new UnitProjection { position = u.position, Tag = u.Tag, unitType = u.type, }; }));
-            foreach (var u in GetWorkers())
-            {
-                foreach (var order in u.orders)
-                {
-                    if (buildId2Units.TryGetValue(order.AbilityId, out var unitType1) && UnitTypeInfo.Refinery.Contains(unitType1))
-                    {
-                        if (units.TryGetValue(order.TargetUnitTag, out var unit1) && UnitTypeInfo.VespeneGeysers.Contains(unit1.type))
-                            proj.Add(new UnitProjection { position = unit1.position, Tag = 0, unitType = unitType1, });
-                        else if (unitLose.TryGetValue(order.TargetUnitTag, out unit1) && UnitTypeInfo.VespeneGeysers.Contains(unit1.type))
-                            proj.Add(new UnitProjection { position = unit1.position, Tag = 0, unitType = unitType1, });
-                    }
-                }
-            }
+            //foreach (var u in GetWorkers())
+            //{
+            //    foreach (var order in u.orders)
+            //    {
+            //        if (buildId2Units.TryGetValue(order.AbilityId, out var unitType1) && UnitTypeInfo.Refinery.Contains(unitType1))
+            //        {
+            //            if (units.TryGetValue(order.TargetUnitTag, out var unit1) && UnitTypeInfo.VespeneGeysers.Contains(unit1.type))
+            //                proj.Add(new UnitProjection { position = unit1.position, Tag = 0, unitType = unitType1, });
+            //            else if (unitLose.TryGetValue(order.TargetUnitTag, out unit1) && UnitTypeInfo.VespeneGeysers.Contains(unit1.type))
+            //                proj.Add(new UnitProjection { position = unit1.position, Tag = 0, unitType = unitType1, });
+            //        }
+            //    }
+            //}
+            proj.AddRange(GetWorkers().SelectMany(u => u.orders).SelectMany(o =>
+           {
+               if (buildId2Units.TryGetValue(o.AbilityId, out var unitType1) && UnitTypeInfo.Refinery.Contains(unitType1))
+               {
+                   if (
+                   (units.TryGetValue(o.TargetUnitTag, out var unit1) && UnitTypeInfo.VespeneGeysers.Contains(unit1.type)) ||
+   unitLose.TryGetValue(o.TargetUnitTag, out unit1) && UnitTypeInfo.VespeneGeysers.Contains(unit1.type))
+                   {
+                       return new[] { new UnitProjection { position = unit1.position, Tag = 0, unitType = unitType1, } };
+                   }
+               }
+               return new UnitProjection[0];
+           }));
             return proj;
         }
         public bool UnitCanBuild(UnitType unitType)
         {
+            if (unitType == 0) return false;
             var techUnit = type2Tech[unitType];
             if (GetPlayerUnits(techUnit.Spawner).Count > 0)
             {
