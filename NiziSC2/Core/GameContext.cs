@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using System.Xml.Serialization;
+using System.Numerics;
 
 namespace NiziSC2.Core
 {
@@ -33,6 +34,7 @@ namespace NiziSC2.Core
         public List<Unit> visEnemyBases = new List<Unit>();
         public List<System.Numerics.Vector2> enemyBases = new List<System.Numerics.Vector2>();
         public List<Unit> commandCenters;
+        public Dictionary<ulong, MapTag> commandProjections = new Dictionary<ulong, MapTag>();
 
         public Race playerRace;
         public ulong frame = 0;
@@ -187,19 +189,12 @@ namespace NiziSC2.Core
 
             player.FromPlayerCommon(observation.Observation.PlayerCommon);
 
-            cache1.Clear();
+            allianceUnitCache.Clear();
             playerTypeUnits.Clear();
             anotherCache.Clear();
             unitProjections.Clear();
             unitVirtualCount.Clear();
             unitOnBuild.Clear();
-            void KeyIncrease(Dictionary<UnitType, int> _dict, UnitType _key)
-            {
-                if (_dict.ContainsKey(_key))
-                    _dict[_key]++;
-                else
-                    _dict[_key] = 1;
-            }
             var playerUnits1 = GetUnits(Alliance.Self);
             foreach (var unit in playerUnits1)
             {
@@ -221,10 +216,26 @@ namespace NiziSC2.Core
                     KeyIncrease(unitVirtualCount, (UnitType)alias);
                 }
                 KeyIncrease(unitVirtualCount, unit.type);
-                KeyIncrease(unitVirtualCount, (UnitType)unitData.UnitAlias);
+                //KeyIncrease(unitVirtualCount, (UnitType)unitData.UnitAlias);
             }
             var playerUnits = GetUnits(Alliance.Self);
             commandCenters = playerUnits.Where(u => { return UnitTypeInfo.ResourceCenters.Contains(u.type); }).ToList();
+            var delCommandProj = commandProjections.Where(u =>
+             {
+                 if (!units.TryGetValue(u.Key, out var unit) || unit.health == 0)
+                     return true;
+                 if (Vector2.DistanceSquared(u.Value.Position, unit.position) > 4)
+                 {
+                     if (unit.orders.Count == 0 || unit.orders[0].TargetWorldSpacePos == null)
+                         return true;
+                     Vector2 pos = new Vector2(unit.orders[0].TargetWorldSpacePos.X, unit.orders[0].TargetWorldSpacePos.Y);
+                     if (Vector2.DistanceSquared(pos, u.Value.Position) > 4)
+                         return true;
+                 }
+                 return false;
+             }).Select(u => u.Key);
+            foreach (var delKey in delCommandProj)
+                commandProjections.Remove(delKey);
         }
         public void FrameEnd()
         {
@@ -284,16 +295,16 @@ namespace NiziSC2.Core
             }
             return false;
         }
-        Dictionary<SC2APIProtocol.Alliance, List<Unit>> cache1 = new Dictionary<Alliance, List<Unit>>();
+        Dictionary<SC2APIProtocol.Alliance, List<Unit>> allianceUnitCache = new Dictionary<Alliance, List<Unit>>();
         Dictionary<UnitType, List<Unit>> playerTypeUnits = new Dictionary<UnitType, List<Unit>>();
         Dictionary<string, List<Unit>> anotherCache = new Dictionary<string, List<Unit>>();
         Dictionary<UnitType, List<UnitProjection>> unitProjections = new Dictionary<UnitType, List<UnitProjection>>();
         public List<Unit> GetUnits(SC2APIProtocol.Alliance alliance)
         {
-            if (!cache1.TryGetValue(alliance, out var u1))
+            if (!allianceUnitCache.TryGetValue(alliance, out var u1))
             {
                 u1 = units.Where(u => { return u.Value.alliance == alliance; }).Select(u => { return u.Value; }).ToList();
-                cache1[alliance] = u1;
+                allianceUnitCache[alliance] = u1;
             }
             return u1;
         }
@@ -439,6 +450,14 @@ namespace NiziSC2.Core
                 return true;
             }
             return false;
+        }
+
+        void KeyIncrease(Dictionary<UnitType, int> _dict, UnitType _key)
+        {
+            if (_dict.ContainsKey(_key))
+                _dict[_key]++;
+            else
+                _dict[_key] = 1;
         }
     }
 }

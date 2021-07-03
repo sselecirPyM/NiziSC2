@@ -124,6 +124,7 @@ namespace NiziSC2.Core
             UnitType.ZERG_HYDRALISK,
             UnitType.ZERG_INFESTOR,
             UnitType.ZERG_MUTALISK,
+            UnitType.ZERG_LURKERMP,
             UnitType.ZERG_QUEEN,
             UnitType.ZERG_ROACH,
             UnitType.ZERG_SWARMHOSTMP,

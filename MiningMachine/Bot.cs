@@ -17,8 +17,12 @@ namespace MiningMachine
         public WriteableImageData nonResPlacementGrid;
         public NearGroup mineralGroup;
         public ImageScaledMap scaledVisMap = new ImageScaledMap();
-        public int cancelCount = 0;
         public ulong perviousEnemyTag;
+        public Dictionary<UnitType, int> suggestBarracksFood = new Dictionary<UnitType, int>()
+        { { UnitType.TERRAN_BARRACKS,20}, {UnitType.TERRAN_FACTORY,20},{UnitType.TERRAN_STARPORT,40}, };
+        public Dictionary<UnitType, int> MinCount = new Dictionary<UnitType, int>()
+        { { UnitType.TERRAN_BARRACKS,1}, {UnitType.TERRAN_FACTORY,2},{UnitType.TERRAN_STARPORT,1}, };
+        public HashSet<Unit> otherCommand = new HashSet<Unit>();
 
         public void Initialize()
         {
@@ -106,7 +110,7 @@ namespace MiningMachine
                 return false;
             }).ToArray();
             var needAddons = playerUnits.Where(u => { return UnitTypeInfo.NeedAddon.Contains(u.type) && u.addOnTag == 0 && u.orders.Count == 0; }).ToArray();
-
+            otherCommand.RemoveWhere(u => u.orders.Count == 0);
             var geysersCanBuild = geysers.Where(u =>
             {
                 if (u.healthMax == 0) return false;
@@ -264,14 +268,22 @@ namespace MiningMachine
             var pos1 = scaledVisMap.GetPos(scaledVisMap.GetLow(out _));
             Vector2 attackPos = pos1 * new Vector2(visibility.Size.X, visibility.Size.Y);
             float foodArmyReal = army.Sum(u => gameContext.gameData.Units[(int)u.type].FoodRequired);
-            var widowMines = army.Where(u => UnitTypeInfo.WidowMine.Contains(u.type));
+            var widowMines = army.Where(u => UnitTypeInfo.WidowMine.Contains(u.type)).ToList();
 
-            var army4 = army.Where(u => u.weaponCooldown < 0.1);
-            var army5 = army.Where(u => u.weaponCooldown >= 0.1);
-            if (foodArmyReal < 70)
-                action.EnqueueAbility(widowMines.Where(u => u.type == UnitType.TERRAN_WIDOWMINE), Abilities.BURROWDOWN_WIDOWMINE);
-            else
-                action.EnqueueAbility(widowMines.Where(u => u.type == UnitType.TERRAN_WIDOWMINEBURROWED), Abilities.BURROWUP_WIDOWMINE);
+            var army4 = army.Where(u => u.weaponCooldown < 0.1 && !otherCommand.Contains(u));
+            var army5 = army.Where(u => u.weaponCooldown >= 0.1 && !otherCommand.Contains(u));
+
+            foreach (var widowMine in widowMines)
+            {
+                if (widowMine.type == UnitType.TERRAN_WIDOWMINE && !otherCommand.Contains(widowMine) && GetNearbyUnit(widowMines, widowMine.position, 4).Count > 3)
+                {
+                    action.EnqueueSmart(new[] { widowMine }, RandomPosition(widowMine.position, 2.5f));
+                    otherCommand.Add(widowMine);
+                }
+            }
+
+            action.EnqueueAbility(widowMines.Where(u => u.type == UnitType.TERRAN_WIDOWMINE && !otherCommand.Contains(u) && (foodArmyReal < 50 || GetNearbyUnit(enemiesArmy, u.position, 8).Count > 0)), Abilities.BURROWDOWN_WIDOWMINE);
+            action.EnqueueAbility(widowMines.Where(u => u.type == UnitType.TERRAN_WIDOWMINEBURROWED && foodArmyReal >= 50 && GetNearbyUnit(enemiesArmy, u.position, 10).Count == 0), Abilities.BURROWUP_WIDOWMINE);
 
             if (foodArmyReal < 70)
                 action.EnqueueAbility(GetUnits(UnitType.TERRAN_SIEGETANK), Abilities.MORPH_SIEGEMODE);
@@ -305,8 +317,6 @@ namespace MiningMachine
 
                 if (foodArmyReal >= 50)
                     action.EnqueueAttack(army4, enemiesPosition);
-                //else if (foodArmyReal >= 20 && commandCenters.Length > 0 &&commandCenters.Any(u=>Vector2.Distance(enemiesPosition, u.position) < 40) )
-                //    action.EnqueueAttack(army2, enemiesPosition);
                 if (foodArmyReal >= 15)
                 {
                     for (int i = 0; i < 1; i++)
@@ -328,7 +338,7 @@ namespace MiningMachine
             var commandCenterProjection = gameContext.GetUnitProjections(UnitTypeInfo.ResourceCenters);
             gameContext.unitOnBuild.TryGetValue(raceData.ResourceBuilding, out int onbuildCommandCenterCount);
             bool EnoughWorker = commandCenters.All(u => { return u.assignedHarvesters >= u.idealHarvesters; }) && player.FoodWorkers > 20 && onbuildCommandCenterCount == 0;
-            bool expand = player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 20 || EnoughWorker || player.MineralStat.current > 1000 || (cancelCount == 0 && commandCenterProjection.Count < 5);
+            bool expand = player.SupplyConsume > GetUnitVirtualCount(raceData.ResourceBuilding) * 20 || EnoughWorker || player.MineralStat.current > 1000 || commandCenterProjection.Count < 5;
 
             watch1.Stop();
             long tick3 = watch1.ElapsedTicks;
@@ -404,27 +414,46 @@ namespace MiningMachine
                         {
                             var spawner = GetRandom(nearbyWorkers);
 
-                            Vector2 pos = RandomPosition(spawner.position, 8);
-                            if (nonResPlacementGrid.Query((int)pos.X, (int)pos.Y) && gameContext.Afford(raceData.DefenseAir))
+                            Vector2 pos = RandomPosition(commandCenter.position, 6);
+                            if (nonResPlacementGrid.Query((int)pos.X, (int)pos.Y) && (spawner.orders.Count == 0 || !gameContext.buildId2Units.ContainsKey(spawner.orders[0].AbilityId)) && gameContext.Afford(raceData.DefenseAir))
+                            {
                                 action.EnqueueBuild(spawner.Tag, raceData.DefenseAir, pos);
+                                break;
+                            }
                         }
                     }
             }
+            if (GetUnitVirtualCount(UnitType.TERRAN_WIDOWMINE) < 15)
+            {
+                TechUnit techUnit = raceData.TechUnits.Find(u => u.UnitType == UnitType.TERRAN_WIDOWMINE);
+                var spawners = GetUnits(techUnit.Spawner);
+                if (player.SupplyConsume > 60)
+                {
+                    foreach (var spawner in spawners)
+                        if (spawner.orders.Count == 0 && player.SupplyConsume < 150 && player.MineralStat.current > 200)
+                        {
+                            TryTrain(spawner, techUnit.UnitType, action);
+                        }
+                }
+            }
 
-            if (((cancelCount > 0) || commandCenterProjection.Count >= mineralGroup.middlePoints.Count / 4 || player.SupplyConsume > 110))
+            if ((commandCenterProjection.Count >= mineralGroup.middlePoints.Count / 4 || player.SupplyConsume > 80 || player.MineralStat.current > 900))
                 foreach (TechUnit techUnit in raceData.TechUnits)
                 {
                     var spawners = GetUnits(techUnit.Spawner);
                     //var techUnits = GetUnits(techUnit.UnitType);
                     if (!gameContext.UnitCanBuild(techUnit.UnitType)) continue;
-                    if (!UnitTypeInfo.Workers.Contains(techUnit.Spawner) && (player.MineralStat.current > 1000 || player.SupplyConsume > 110))
+                    if (!UnitTypeInfo.Workers.Contains(techUnit.Spawner))
                     {
-                        foreach (var spawner in spawners)
-                            if (spawner.orders.Count == 0 && player.SupplyConsume < 194 && player.MineralStat.current > 600)
-                            {
-                                if (random.NextDouble() < 0.1)
-                                    TryTrain(spawner, techUnit.UnitType, action);
-                            }
+                        if (player.MineralStat.current > 700 || player.SupplyConsume > 100)
+                        {
+                            foreach (var spawner in spawners)
+                                if (spawner.orders.Count == 0 && player.SupplyConsume < 194 && player.MineralStat.current > 600)
+                                {
+                                    if (random.NextDouble() < 0.1)
+                                        TryTrain(spawner, techUnit.UnitType, action);
+                                }
+                        }
                     }
                     else
                     {
@@ -444,20 +473,19 @@ namespace MiningMachine
 
             if (workers.Count > 0)
             {
-                if (cancelCount > 0 || player.MineralStat.current > 1000)
-                    foreach (var barrack1 in raceData.Barracks)
+                foreach (var barrack1 in raceData.Barracks)
+                {
+                    if ((player.MineralStat.current > 1000 || (GetUnitVirtualCount(barrack1.UnitType) < MinCount[barrack1.UnitType] && player.MineralStat.current > 500)) && barrack1.UnitType != raceData.ResourceBuilding && GetUnitVirtualCount(barrack1.UnitType) < player.SupplyProvide / suggestBarracksFood[barrack1.UnitType])
                     {
-                        if (barrack1.UnitType != raceData.ResourceBuilding && GetUnitVirtualCount(barrack1.UnitType) < player.SupplyProvide / 18)
+                        if (player.VespeneStat.current > 200 && gameContext.Afford(barrack1.UnitType))
                         {
-                            if (gameContext.Afford(barrack1.UnitType))
-                            {
-                                var unit = GetRandom(workers);
-                                Vector2 pos = RandomPosition(unit.position, 10);
-                                if (nonResPlacementGrid.Query((int)pos.X, (int)pos.Y))
-                                    action.EnqueueBuild(unit.Tag, barrack1.UnitType, pos);
-                            }
+                            var unit = GetRandom(workers);
+                            Vector2 pos = RandomPosition(unit.position, 10);
+                            if (nonResPlacementGrid.Query((int)pos.X, (int)pos.Y))
+                                action.EnqueueBuild(unit.Tag, barrack1.UnitType, pos);
                         }
                     }
+                }
             }
             if (expand)
             {
@@ -465,18 +493,7 @@ namespace MiningMachine
                 {
                     Vector2 expandPoint = GetRandom(mineralGroup.middlePoints);
 
-                    //bool _stop1 = false;
                     bool _stop1 = true;
-                    //foreach (var commandCenter in commandCenterProjection)
-                    //{
-                    //    var distance = Vector2.Distance(commandCenter.position, expandPoint1);
-                    //    if (distance < 50)
-                    //    {
-                    //        expandPoint = expandPoint1;
-                    //        _stop1 = true;
-                    //        break;
-                    //    }
-                    //}
 
                     foreach (var commandCenter in commandCenterProjection)
                     {
@@ -511,7 +528,6 @@ namespace MiningMachine
             }
 
             var unitCaceled = playerUnits.Where(u => u.buildProgress < 1 && u.buildProgress * 0.25 > (float)u.health / u.healthMax).ToList();
-            cancelCount += unitCaceled.Count;
             action.EnqueueAbility(unitCaceled, Abilities.CANCEL_BUILDINPROGRESS);
 
             watch1.Stop();
